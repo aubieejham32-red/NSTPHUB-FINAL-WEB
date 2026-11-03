@@ -33,7 +33,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Private local files must not claim the public /storage URL.
+            // Uploaded photos/logos use the public disk below.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],
@@ -43,6 +45,12 @@ return [
             'root' => storage_path('app/public'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
+
+            // Laravel can serve files from storage/app/public even when
+            // public/storage is a normal directory instead of a symlink.
+            // This keeps uploaded logos/profile photos working on Windows,
+            // shared hosting, and local development without storage:link.
+            'serve' => true,
             'throw' => false,
             'report' => false,
         ],
