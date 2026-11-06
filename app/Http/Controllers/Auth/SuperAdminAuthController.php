@@ -12,193 +12,398 @@ use Inertia\Inertia;
 
 class SuperAdminAuthController extends Controller
 {
-    /**
-     * Display the Super Admin Login page.
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Super Administrator Login Page
+    |--------------------------------------------------------------------------
+    */
+
     public function create()
     {
         return Inertia::render('SuperAdmin/SuperAdminLogin');
     }
 
-    /**
-     * Display the Super Admin Create Account page.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Super Administrator Registration Page
+    |--------------------------------------------------------------------------
+    |
+    | Registration is available only in the local environment.
+    |
+    | Public registration must not be available in production because
+    | Super Administrators have access to sensitive university data.
+    |
+    */
+
     public function createAccount()
     {
-        return Inertia::render('SuperAdmin/SuperAdminCreateAcc');
+        abort_unless(
+            app()->environment('local'),
+            404
+        );
+
+        return Inertia::render(
+            'SuperAdmin/SuperAdminCreateAcc'
+        );
     }
 
-    /**
-     * Authenticate Super Admin.
-     */
-    /**
- * Authenticate Super Admin.
- */
-public function store(Request $request)
-{
-    $request->validate([
-        'email' => ['required', 'email'],
-        'password' => ['required'],
-    ]);
 
-    $superAdmin = SuperAdmin::where('email', $request->email)->first();
+    /*
+    |--------------------------------------------------------------------------
+    | Authenticate Super Administrator
+    |--------------------------------------------------------------------------
+    */
 
-    // Email does not exist
-    if (!$superAdmin) {
+    public function store(Request $request)
+    {
+        $request->validate([
+            'email' => [
+                'required',
+                'email',
+            ],
 
-        if ($request->expectsJson()) {
-            return response()->json([
-                'errors' => [
-                    'email' => [
-                        'The email does not exist.'
-                    ]
-                ]
-            ], 422);
+            'password' => [
+                'required',
+            ],
+        ]);
+
+        $superAdmin = SuperAdmin::where(
+            'email',
+            $request->email
+        )->first();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Email Does Not Exist
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$superAdmin) {
+
+            if ($request->expectsJson()) {
+
+                return response()->json([
+                    'errors' => [
+                        'email' => [
+                            'The email does not exist.',
+                        ],
+                    ],
+                ], 422);
+            }
+
+            return back()->withErrors([
+                'email' => 'The email does not exist.',
+            ]);
         }
 
-        return back()->withErrors([
-            'email' => 'The email does not exist.',
-        ]);
-    }
 
-    // Wrong password
-    if (!Hash::check($request->password, $superAdmin->password)) {
+        /*
+        |--------------------------------------------------------------------------
+        | Incorrect Password
+        |--------------------------------------------------------------------------
+        */
 
-        if ($request->expectsJson()) {
-            return response()->json([
-                'errors' => [
-                    'password' => [
-                        'Incorrect password.'
-                    ]
-                ]
-            ], 422);
+        if (
+            !Hash::check(
+                $request->password,
+                $superAdmin->password
+            )
+        ) {
+
+            if ($request->expectsJson()) {
+
+                return response()->json([
+                    'errors' => [
+                        'password' => [
+                            'Incorrect password.',
+                        ],
+                    ],
+                ], 422);
+            }
+
+            return back()->withErrors([
+                'password' => 'Incorrect password.',
+            ]);
         }
 
-        return back()->withErrors([
-            'password' => 'Incorrect password.',
-        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Login Super Administrator
+        |--------------------------------------------------------------------------
+        */
+
+        Auth::guard('superadmin')->login(
+            $superAdmin,
+            $request->boolean('remember')
+        );
+
+        $request->session()->regenerate();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | JSON Response
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->expectsJson()) {
+
+            return response()->json([
+                'success' => true,
+
+                'redirect' => route(
+                    'superadmin.dashboard'
+                ),
+
+                'user' => [
+                    'id' => $superAdmin->id,
+                    'name' => $superAdmin->name,
+                    'email' => $superAdmin->email,
+                    'photo' => $superAdmin->photo,
+                ],
+            ]);
+        }
+
+        return redirect()->route(
+            'superadmin.dashboard'
+        );
     }
 
-    Auth::guard('superadmin')->login(
-        $superAdmin,
-        $request->boolean('remember')
-    );
 
-    $request->session()->regenerate();
+    /*
+    |--------------------------------------------------------------------------
+    | Register Super Administrator
+    |--------------------------------------------------------------------------
+    |
+    | Registration is restricted to the local environment.
+    |
+    | Production Super Administrator accounts must be provisioned
+    | through an authorized administrative process.
+    |
+    */
 
-    if ($request->expectsJson()) {
-        return response()->json([
-            'success' => true,
-            'redirect' => route('superadmin.dashboard'),
-            'user' => [
-                'id' => $superAdmin->id,
-                'name' => $superAdmin->name,
-                'email' => $superAdmin->email,
-                'photo' => $superAdmin->photo,
-            ]
-        ]);
-    }
-
-    return redirect()->route('superadmin.dashboard');
-}
-    /**
-     * Register a new Super Admin.
-     */
     public function register(Request $request)
     {
+        abort_unless(
+            app()->environment('local'),
+            404
+        );
+
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:super_admins,username'],
-            'email' => ['required', 'email', 'max:255', 'unique:super_admins,email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'username' => [
+                'required',
+                'string',
+                'max:255',
+                'unique:super_admins,username',
+            ],
+
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                'unique:super_admins,email',
+            ],
+
+            'password' => [
+                'required',
+                'confirmed',
+                Rules\Password::defaults(),
+            ],
         ]);
 
-        $superAdmin = SuperAdmin::create([
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create Super Administrator Account
+        |--------------------------------------------------------------------------
+        */
+
+        SuperAdmin::create([
             'name' => $validated['name'],
             'username' => $validated['username'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+
+            'password' => Hash::make(
+                $validated['password']
+            ),
         ]);
 
         return redirect()
             ->route('superadmin.login')
-            ->with('success', 'Super Admin account created successfully. Please log in.');
+            ->with(
+                'success',
+                'Super Admin account created successfully. Please log in.'
+            );
     }
 
-    /**
- * Update Super Admin Password.
- */
-public function updatePassword(Request $request)
-{
-    $request->validate([
-        'current_password' => ['required'],
-        'password' => ['required', 'min:8', 'confirmed'],
-    ]);
 
-    $superAdmin = Auth::guard('superadmin')->user();
+    /*
+    |--------------------------------------------------------------------------
+    | Update Super Administrator Password
+    |--------------------------------------------------------------------------
+    */
 
-    if (!$superAdmin) {
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => [
+                'required',
+            ],
+
+            'password' => [
+                'required',
+                'min:8',
+                'confirmed',
+            ],
+        ]);
+
+        $superAdmin = Auth::guard(
+            'superadmin'
+        )->user();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Verify Authentication
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$superAdmin) {
+
+            return response()->json([
+                'message' => 'Unauthorized.',
+            ], 401);
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Verify Current Password
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            !Hash::check(
+                $request->current_password,
+                $superAdmin->password
+            )
+        ) {
+
+            return response()->json([
+                'message' => 'Current password is incorrect.',
+            ], 422);
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Update Password
+        |--------------------------------------------------------------------------
+        */
+
+        $superAdmin->password = Hash::make(
+            $request->password
+        );
+
+        $superAdmin->save();
+
         return response()->json([
-            'message' => 'Unauthorized.'
-        ], 401);
+            'message' => 'Password updated successfully.',
+        ]);
     }
 
-    // Check current password
-    if (!Hash::check($request->current_password, $superAdmin->password)) {
 
-        return response()->json([
-            'message' => 'Current password is incorrect.'
-        ], 422);
+    /*
+    |--------------------------------------------------------------------------
+    | Logout Super Administrator
+    |--------------------------------------------------------------------------
+    |
+    | Returns a snapshot of the signed-out Super Administrator account.
+    |
+    | This allows the frontend to maintain its account chooser even
+    | when localStorage is empty or Google authentication was used.
+    |
+    */
 
-    }
-
-    // Update password
-    $superAdmin->password = Hash::make($request->password);
-    $superAdmin->save();
-
-    return response()->json([
-        'message' => 'Password updated successfully.'
-    ]);
-}
-    /**
-     * Logout Super Admin.
-     *
-     * Return a safe snapshot of the account that was just signed out so the
-     * frontend can always add it to the account chooser, even when localStorage
-     * was empty or the login happened through Google OAuth.
-     */
     public function destroy(Request $request)
     {
-        /** @var SuperAdmin|null $superAdmin */
-        $superAdmin = Auth::guard('superadmin')->user();
+        $superAdmin = Auth::guard(
+            'superadmin'
+        )->user();
 
         $account = null;
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Prepare Account Snapshot
+        |--------------------------------------------------------------------------
+        */
+
         if ($superAdmin) {
+
             $account = [
                 'id' => $superAdmin->id,
+
                 'name' => $superAdmin->name,
+
                 'username' => $superAdmin->username,
+
                 'email' => $superAdmin->email,
+
                 'photo' => $superAdmin->photo ?? null,
-                'profile_photo' => $superAdmin->profile_photo ?? null,
+
+                'profile_photo' =>
+                    $superAdmin->profile_photo ?? null,
+
                 'account_type' => 'superadmin',
             ];
         }
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Logout and Invalidate Session
+        |--------------------------------------------------------------------------
+        */
+
         Auth::guard('superadmin')->logout();
 
         $request->session()->invalidate();
+
         $request->session()->regenerateToken();
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | JSON Logout Response
+        |--------------------------------------------------------------------------
+        */
+
         if ($request->expectsJson()) {
+
             return response()->json([
                 'success' => true,
+
                 'account' => $account,
-                'redirect' => route('superadmin.logout'),
+
+                'redirect' => route(
+                    'superadmin.logout'
+                ),
             ]);
         }
 
-        return redirect()->route('superadmin.logout');
+        return redirect()->route(
+            'superadmin.logout'
+        );
     }
 }

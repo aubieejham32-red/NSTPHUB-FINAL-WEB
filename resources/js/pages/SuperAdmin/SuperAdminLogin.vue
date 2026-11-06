@@ -1,9 +1,9 @@
+
 <template>
   <div class="login-container">
 
     <!-- LEFT PANEL -->
     <div class="left-panel">
-
 
       <!-- Badge Branding -->
       <div class="branding">
@@ -34,45 +34,70 @@
             v-model="email"
             placeholder="Enter your email"
           />
+
           <p v-if="errors.email" class="error-message">
-    {{ firstError("email") }}
-</p>
+            {{ firstError("email") }}
+          </p>
         </div>
 
-        <!-- PASSWORD WITH FUNCTIONAL TOGGLE -->
+        <!-- PASSWORD -->
         <div class="form-group">
           <label>Password</label>
+
           <div class="password-wrapper">
             <input
               :type="showPassword ? 'text' : 'password'"
               v-model="password"
               placeholder="Enter your password"
             />
-            <button 
-              type="button" 
-              class="toggle-password-btn" 
+
+            <button
+              type="button"
+              class="toggle-password-btn"
               @click="togglePasswordVisibility"
               :aria-label="showPassword ? 'Hide password' : 'Show password'"
             >
-              <!-- Eye Icon (Visible state) -->
-              <svg v-if="showPassword" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#D99202" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-svg">
+              <!-- Eye Icon -->
+              <svg
+                v-if="showPassword"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#D99202"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="eye-svg"
+              >
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
               </svg>
-              <!-- Eye-Slash Icon (Hidden state) -->
-              <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#D99202" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-svg">
+
+              <!-- Eye Slash Icon -->
+              <svg
+                v-else
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#D99202"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="eye-svg"
+              >
                 <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
                 <line x1="1" y1="1" x2="23" y2="23"></line>
               </svg>
             </button>
           </div>
-          <p v-if="errors.password" class="error-message">
-    {{ firstError("password") }}
-</p>
 
-<p v-if="errors.login" class="error-message">
-    {{ firstError("login") }}
-</p>
+          <p v-if="errors.password" class="error-message">
+            {{ firstError("password") }}
+          </p>
+
+          <p v-if="errors.login" class="error-message">
+            {{ firstError("login") }}
+          </p>
         </div>
 
         <!-- OPTIONS -->
@@ -98,9 +123,10 @@
           {{ loading ? 'Logging in...' : 'Login' }}
         </button>
 
-        <!-- REGISTER LINK -->
-        <div class="register">
+        <!-- LOCAL DEVELOPMENT REGISTRATION ONLY -->
+        <div v-if="showLocalRegistration" class="register">
           <span class="register-prompt">Don't have an account?</span>
+
           <Link href="/superadmin/register" class="register-link">
             Create now
           </Link>
@@ -113,7 +139,11 @@
 
         <!-- GOOGLE SIGN IN -->
         <div class="google-wrapper">
-          <button type="button" class="google-btn" @click="loginWithGoogle">
+          <button
+            type="button"
+            class="google-btn"
+            @click="loginWithGoogle"
+          >
             <img
               src="/images/google.png"
               alt="Google"
@@ -133,18 +163,44 @@ import { ref } from "vue";
 import axios from "axios";
 import { Link, usePage } from "@inertiajs/vue3";
 
+/*
+|--------------------------------------------------------------------------
+| Production Registration Security
+|--------------------------------------------------------------------------
+|
+| Registration is visible only when running Vite in development mode.
+|
+| Railway production builds use Vite production mode, so the public
+| registration link is hidden automatically.
+|
+| Backend registration is separately protected by the controller.
+|
+*/
+
+const showLocalRegistration = import.meta.env.DEV;
+
+/*
+|--------------------------------------------------------------------------
+| Super Administrator Account Storage
+|--------------------------------------------------------------------------
+*/
+
 const SUPERADMIN_STORAGE_KEY =
     "savedSuperAdminAccounts";
 
 const normalizeSuperAdmin = (account = {}) => ({
     ...account,
+
     id: account.id ?? null,
+
     name:
         account.name ??
         account.full_name ??
         account.username ??
         "Super Admin",
+
     email: account.email ?? "",
+
     photo:
         account.photo ??
         account.profile_photo ??
@@ -152,8 +208,15 @@ const normalizeSuperAdmin = (account = {}) => ({
         account.picture ??
         account.profile_picture ??
         "",
+
     account_type: "superadmin",
 });
+
+/*
+|--------------------------------------------------------------------------
+| Form State
+|--------------------------------------------------------------------------
+*/
 
 const email = ref("");
 const password = ref("");
@@ -162,9 +225,16 @@ const remember = ref(false);
 const page = usePage();
 
 const loading = ref(false);
+
 const errors = ref({
     ...(page.props.errors ?? {})
 });
+
+/*
+|--------------------------------------------------------------------------
+| Error Handling
+|--------------------------------------------------------------------------
+*/
 
 const firstError = (field) => {
     const value = errors.value?.[field];
@@ -176,12 +246,23 @@ const firstError = (field) => {
     return value ? String(value) : "";
 };
 
-// Password visibility
+/*
+|--------------------------------------------------------------------------
+| Password Visibility
+|--------------------------------------------------------------------------
+*/
+
 const showPassword = ref(false);
 
 const togglePasswordVisibility = () => {
     showPassword.value = !showPassword.value;
 };
+
+/*
+|--------------------------------------------------------------------------
+| Super Administrator Login
+|--------------------------------------------------------------------------
+*/
 
 const login = async () => {
 
@@ -204,22 +285,48 @@ const login = async () => {
             }
         );
 
-        // Save/refresh the authenticated Super Admin in a dedicated key.
+        /*
+        |--------------------------------------------------------------------------
+        | Load Saved Accounts
+        |--------------------------------------------------------------------------
+        */
+
         let accounts = [];
 
         try {
-            const raw = localStorage.getItem(SUPERADMIN_STORAGE_KEY);
+
+            const raw = localStorage.getItem(
+                SUPERADMIN_STORAGE_KEY
+            );
+
             accounts = raw ? JSON.parse(raw) : [];
 
             if (!Array.isArray(accounts)) {
                 accounts = [];
             }
+
         } catch {
+
             accounts = [];
+
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Normalize Account Information
+        |--------------------------------------------------------------------------
+        */
+
         const currentAccount =
-            normalizeSuperAdmin(response.data?.user ?? {});
+            normalizeSuperAdmin(
+                response.data?.user ?? {}
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Find Existing Account
+        |--------------------------------------------------------------------------
+        */
 
         const index = accounts.findIndex(
             account =>
@@ -228,13 +335,23 @@ const login = async () => {
                     String(currentAccount.email ?? '').toLowerCase()
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | Save Account
+        |--------------------------------------------------------------------------
+        */
+
         if (index === -1) {
+
             accounts.push(currentAccount);
+
         } else {
+
             accounts[index] = {
                 ...accounts[index],
                 ...currentAccount,
             };
+
         }
 
         localStorage.setItem(
@@ -242,7 +359,12 @@ const login = async () => {
             JSON.stringify(accounts)
         );
 
-        // Redirect to dashboard
+        /*
+        |--------------------------------------------------------------------------
+        | Redirect to Dashboard
+        |--------------------------------------------------------------------------
+        */
+
         window.location.href = response.data.redirect;
 
     }
@@ -277,6 +399,12 @@ const login = async () => {
 
 };
 
+/*
+|--------------------------------------------------------------------------
+| Google Authentication
+|--------------------------------------------------------------------------
+*/
+
 const loginWithGoogle = () => {
     window.location.href = "/auth/google/superadmin";
 };
@@ -289,18 +417,20 @@ const loginWithGoogle = () => {
 /* =====================
     GLOBAL CONTAINER
 ===================== */
+
 .login-container {
   display: flex;
   height: 100vh;
   width: 100%;
   overflow: hidden;
-  background-color: #EFEBE2; 
+  background-color: #EFEBE2;
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 /* =====================
     LEFT PANEL
 ===================== */
+
 .left-panel {
   width: 35%;
   max-width: 440px;
@@ -349,12 +479,12 @@ const loginWithGoogle = () => {
   width: 200px;
   height: auto;
   margin-bottom: 24px;
-  filter: 
+  filter:
     drop-shadow(1px 1px 0px #EFEBE2)
     drop-shadow(-1px -1px 0px #EFEBE2)
     drop-shadow(1px -1px 0px #EFEBE2)
     drop-shadow(-1px 1px 0px #EFEBE2)
-    drop-shadow(0px 4px 5px rgba(0, 0, 0, 0.6)); 
+    drop-shadow(0px 4px 5px rgba(0, 0, 0, 0.6));
 }
 
 .branding h3 {
@@ -379,6 +509,7 @@ const loginWithGoogle = () => {
 /* =====================
     RIGHT PANEL
 ===================== */
+
 .right-panel {
   flex: 1;
   display: flex;
@@ -395,18 +526,19 @@ const loginWithGoogle = () => {
 /* =====================
     TYPOGRAPHY & FORM CONTROLS
 ===================== */
+
 .title {
   text-align: center;
   font-family: 'Lora', serif;
-  font-size: 4.5rem; 
+  font-size: 4.5rem;
   font-weight: 500;
-  color: #54100F; 
+  color: #54100F;
   margin-bottom: 40px;
   margin-top: 0;
 }
 
 .title span {
-  color: #D99202; 
+  color: #D99202;
 }
 
 .form-group {
@@ -418,11 +550,12 @@ const loginWithGoogle = () => {
   font-family: 'Lora', serif;
   font-size: 1.5rem;
   font-weight: 500;
-  color: #233E47; 
+  color: #233E47;
   margin-bottom: 8px;
 }
 
-/* Relative container to securely place absolute toggle button */
+/* PASSWORD INPUT */
+
 .password-wrapper {
   position: relative;
   width: 100%;
@@ -431,10 +564,10 @@ const loginWithGoogle = () => {
 .form-group input {
   width: 100%;
   height: 56px;
-  border: 2px solid #D99202; 
+  border: 2px solid #D99202;
   border-radius: 12px;
-  background-color: #EEF2FB; 
-  padding: 0 52px 0 20px; /* Right padding keeps your typed text from running under the toggle icon */
+  background-color: #EEF2FB;
+  padding: 0 52px 0 20px;
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 1rem;
   color: #000D12;
@@ -452,7 +585,8 @@ const loginWithGoogle = () => {
   color: #BEBEBE;
 }
 
-/* Layout context rules for the eye switch */
+/* PASSWORD TOGGLE */
+
 .toggle-password-btn {
   position: absolute;
   right: 18px;
@@ -480,6 +614,7 @@ const loginWithGoogle = () => {
 /* =====================
     CUSTOM OPTIONS
 ===================== */
+
 .options {
   display: flex;
   justify-content: space-between;
@@ -550,6 +685,7 @@ const loginWithGoogle = () => {
 /* =====================
     SUBMIT BUTTON
 ===================== */
+
 .login-btn {
   width: 100%;
   height: 60px;
@@ -581,6 +717,7 @@ const loginWithGoogle = () => {
 /* =====================
     REGISTER PROMPT
 ===================== */
+
 .register {
   text-align: center;
   margin-top: 28px;
@@ -608,6 +745,7 @@ const loginWithGoogle = () => {
 /* =====================
     DIVIDER LINE
 ===================== */
+
 .divider {
   margin: 35px 0;
   display: flex;
@@ -633,6 +771,7 @@ const loginWithGoogle = () => {
 /* =====================
     GOOGLE SIGN IN
 ===================== */
+
 .google-wrapper {
   display: flex;
   justify-content: center;
@@ -647,7 +786,7 @@ const loginWithGoogle = () => {
   gap: 12px;
   border: 2px solid #D99202;
   border-radius: 8px;
-  background-color: #EFEBE2; 
+  background-color: #EFEBE2;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
@@ -671,27 +810,31 @@ const loginWithGoogle = () => {
 /* =====================
     RESPONSIVE DESIGN
 ===================== */
+
 @media (max-width: 900px) {
   .left-panel {
     display: none;
   }
+
   .right-panel {
     padding: 24px;
   }
+
   .login-card {
     width: 100%;
     max-width: 100%;
   }
+
   .title {
     font-size: 3.5rem;
   }
 }
 
 .error-message {
-    color: #dc2626;
-    font-size: 14px;
-    margin-top: 6px;
-    margin-left: 4px;
-    font-weight: 500;
+  color: #dc2626;
+  font-size: 14px;
+  margin-top: 6px;
+  margin-left: 4px;
+  font-weight: 500;
 }
 </style>

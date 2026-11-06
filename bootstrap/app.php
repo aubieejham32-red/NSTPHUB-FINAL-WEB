@@ -1,3 +1,4 @@
+
 <?php
 
 use App\Http\Middleware\HandleAppearance;
@@ -16,6 +17,28 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Railway HTTPS Proxy Configuration
+        |--------------------------------------------------------------------------
+        |
+        | Railway uses a reverse proxy that handles HTTPS connections.
+        |
+        | Laravel needs to trust the forwarded headers so it correctly
+        | recognizes HTTPS requests and generates secure URLs.
+        |
+        | This is important for:
+        |
+        | - Google OAuth authentication
+        | - Secure redirects
+        | - Session handling
+        | - HTTPS URL generation
+        |
+        */
+
+        $middleware->trustProxies(at: '*');
+
 
         /*
         |--------------------------------------------------------------------------
