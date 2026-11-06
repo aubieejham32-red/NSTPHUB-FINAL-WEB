@@ -6,12 +6,6 @@ return [
     |--------------------------------------------------------------------------
     | Third Party Services
     |--------------------------------------------------------------------------
-    |
-    | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
-    |
     */
 
     'postmark' => [
@@ -35,10 +29,37 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Existing Google Login
+    |--------------------------------------------------------------------------
+    |
+    | Keep these credentials separate from the Gmail API.
+    |
+    */
+
     'google' => [
-    'client_id' => env('GOOGLE_CLIENT_ID'),
-    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-    'redirect' => env('GOOGLE_REDIRECT_URI'),
-],
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | NSTP HUB Gmail API
+    |--------------------------------------------------------------------------
+    |
+    | Uses the second Google account for outgoing emails.
+    |
+    */
+
+    'gmail_api' => [
+        'client_id' => env('GMAIL_API_CLIENT_ID'),
+        'client_secret' => env('GMAIL_API_CLIENT_SECRET'),
+        'redirect' => env('GMAIL_API_REDIRECT_URI'),
+
+        // Enable only while connecting the sender Gmail account.
+        'setup_enabled' => env('GMAIL_API_SETUP_ENABLED', false),
+    ],
 
 ];

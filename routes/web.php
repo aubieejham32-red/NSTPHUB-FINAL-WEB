@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\Auth\GmailOAuthController;
 use App\Http\Controllers\Auth\SuperAdminAuthController;
 use App\Http\Controllers\Auth\SuperAdminForgotPasswordController;
 use App\Http\Controllers\Auth\UniversityAccessController;
@@ -137,7 +138,32 @@ Route::controller(
 
 });
 
+/*
+|--------------------------------------------------------------------------
+| NSTP HUB Gmail API Authorization
+|--------------------------------------------------------------------------
+|
+| Only authenticated Super Administrators can authorize
+| the dedicated Gmail sender account.
+|
+*/
 
+Route::middleware(['auth:superadmin'])
+    ->prefix('auth/gmail')
+    ->controller(GmailOAuthController::class)
+    ->group(function () {
+
+        Route::get(
+            '/connect',
+            'redirect'
+        )->name('gmail.oauth.connect');
+
+        Route::get(
+            '/callback',
+            'callback'
+        )->name('gmail.oauth.callback');
+
+    });
 /*
 |--------------------------------------------------------------------------
 | Super Admin Authentication
