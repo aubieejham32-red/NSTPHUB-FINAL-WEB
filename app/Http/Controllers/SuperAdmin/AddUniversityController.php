@@ -1153,181 +1153,88 @@ class AddUniversityController extends Controller
     |
     */
 
-    public function downloadPdf(
-        University $university
-    ) {
-        /*
-        |--------------------------------------------------------------------------
-        | Find University Administrator
-        |--------------------------------------------------------------------------
-        */
+    public function downloadPdf(University $university)
+{
+    // Find the university administrator.
+    $administrator = UniversityAdministrator::query()
+        ->where('university_id', $university->id)
+        ->first();
 
-        $administrator =
-            UniversityAdministrator::query()
-                ->where(
-                    'university_id',
-                    $university->id
-                )
-                ->first();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Administrator Not Found
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            !$administrator
-        ) {
-            abort(
-                404,
-                'University administrator not found.'
-            );
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Get Temporary Password
-        |--------------------------------------------------------------------------
-        */
-
-        $temporaryPassword =
-            $administrator
-                ->temporary_password;
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Temporary Password No Longer Available
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            empty(
-                $temporaryPassword
-            )
-        ) {
-            return response()->json(
-                [
-                    'success' =>
-                        false,
-
-                    'message' =>
-                        'The temporary password is no longer available. '
-                        . 'The administrator may already have changed the password. '
-                        . 'A credentials PDF containing the original temporary '
-                        . 'password can no longer be generated.',
-                ],
-                422
-            );
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Build Credentials
-        |--------------------------------------------------------------------------
-        */
-
-        $credentials =
-            [
-                'university' =>
-                    $university->name,
-
-                'access_code' =>
-                    $university->access_code,
-
-                'portal_url' =>
-                    route(
-                        'university-admin.login'
-                    ),
-
-                'email' =>
-                    $administrator->email,
-
-                'username' =>
-                    $administrator->username,
-
-                'password' =>
-                    $temporaryPassword,
-
-                'administrator' =>
-                    $administrator->full_name,
-            ];
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Generate LEGAL Portrait PDF
-        |--------------------------------------------------------------------------
-        */
-
-        $pdf =
-            Pdf::loadView(
-                'pdf.university_credentials',
-                [
-                    'credentials' =>
-                        $credentials,
-                ]
-            )
-                ->setPaper(
-                    'legal',
-                    'portrait'
-                );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Safe University Filename
-        |--------------------------------------------------------------------------
-        */
-
-        $safeUniversity =
-            Str::slug(
-                (string) (
-                    $university->acronym
-                    ?: $university->name
-                )
-            );
-
-
-        if (
-            $safeUniversity === ''
-        ) {
-            $safeUniversity =
-                'university';
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Filename
-        |--------------------------------------------------------------------------
-        */
-
-        $filename =
-            'nstphub_credentials_'
-            . $safeUniversity
-            . '_'
-            . now()->format(
-                'Ymd_His'
-            )
-            . '.pdf';
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Download PDF
-        |--------------------------------------------------------------------------
-        */
-
-        return $pdf->download(
-            $filename
-        );
+    if (!$administrator) {
+        abort(404, 'University administrator not found.');
     }
 
+    // Retrieve the temporary password.
+    $temporaryPassword = $administrator->temporary_password;
+
+    if (empty($temporaryPassword)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'The temporary password is no longer available. '
+                . 'The administrator may already have changed the password. '
+                . 'A credentials PDF containing the original temporary '
+                . 'password can no longer be generated.',
+        ], 422);
+    }
+
+    // Prepare credentials for the PDF.
+    $credentials = [
+        'university' => $university->name,
+        'access_code' => $university->access_code,
+        'portal_url' => route('university-admin.login'),
+        'email' => $administrator->email,
+        'username' => $administrator->username,
+        'password' => $temporaryPassword,
+        'administrator' => $administrator->full_name,
+    ];
+
+    // Generate the PDF on legal-size portrait paper.
+    $pdf = Pdf::loadView(
+        'pdf.university_credentials',
+        ['credentials' => $credentials]
+    )->setPaper('legal', 'portrait');
+
+    // Generate a safe filename.
+    $safeUniversity = Str::slug(
+        (string) ($university->acronym ?: $university->name)
+    );
+
+    if ($safeUniversity === '') {
+        $safeUniversity = 'university';
+    }
+
+    $filename = 'nstphub_credentials_'
+        . $safeUniversity
+        . '_'
+        . now()->format('Ymd_His')
+        . '.pdf';
+
+    // Generate the complete PDF before sending response headers.
+    $pdfContent = $pdf->output();
+
+    // Validate the generated PDF.
+    if (!str_starts_with($pdfContent, '%PDF-')) {
+        Log::error('Invalid university credentials PDF generated.', [
+            'university_id' => $university->id,
+        ]);
+
+        abort(500, 'Unable to generate a valid PDF document.');
+    }
+
+    // Stream the PDF without specifying Content-Length.
+    return response()->streamDownload(
+        static function () use ($pdfContent): void {
+            echo $pdfContent;
+        },
+        $filename,
+        [
+            'Content-Type' => 'application/pdf',
+            'Cache-Control' => 'private, no-store, no-cache, must-revalidate',
+            'Pragma' => 'no-cache',
+            'X-Content-Type-Options' => 'nosniff',
+        ]
+    );
+}
 
     /*
     |--------------------------------------------------------------------------
