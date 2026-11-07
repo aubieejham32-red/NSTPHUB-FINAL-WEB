@@ -10,6 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -608,9 +609,7 @@ class AddUniversityController extends Controller
                         */
 
                         $generatedPassword =
-                            Str::password(
-                                length: 12
-                            );
+                            Str::random(16); // Alphanumeric, avoids PDF copy/typing errors.
 
 
                         /*
@@ -842,6 +841,23 @@ class AddUniversityController extends Controller
                             );
                         }
 
+
+                        // Verify the same generated password was saved for login
+                        // and encrypted for the credentials PDF.
+                        if (
+                            !Hash::check(
+                                $generatedPassword,
+                                $administrator->getAuthPassword()
+                            ) ||
+                            !hash_equals(
+                                $generatedPassword,
+                                (string) $administrator->temporary_password
+                            )
+                        ) {
+                            throw new \RuntimeException(
+                                'Generated administrator credentials failed verification.'
+                            );
+                        }
 
                         /*
                         |--------------------------------------------------------------------------
@@ -1142,6 +1158,55 @@ class AddUniversityController extends Controller
     }
 
 
+    /**
+     * Explicitly issue a new temporary login password for an EXISTING
+     * university administrator, without creating another university.
+     * The route must require the Super Administrator guard and POST/CSRF.
+     */
+    public function resetAdministratorCredentials(University $university)
+    {
+        $administratorId = DB::transaction(function () use ($university) {
+            $administrator = UniversityAdministrator::query()
+                ->where('university_id', $university->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // 16 cryptographically random letters/numbers, no ambiguous symbols.
+            $newPassword = Str::random(16);
+
+            // University's model casts password=hashed and temporary_password=encrypted.
+            $administrator->password = $newPassword;
+            $administrator->temporary_password = $newPassword;
+            $administrator->must_change_password = true;
+            $administrator->remember_token = Str::random(60);
+            $administrator->save();
+
+            if (
+                !Hash::check($newPassword, (string) $administrator->getAuthPassword()) ||
+                !hash_equals($newPassword, (string) $administrator->temporary_password)
+            ) {
+                throw new \RuntimeException('New credentials failed internal verification.');
+            }
+
+            return $administrator->id;
+        });
+
+        // Never return or log the raw password in JSON or application logs.
+        Log::notice('University administrator temporary password reissued.', [
+            'university_id' => $university->id,
+            'administrator_id' => $administratorId,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'A new password was generated. Download the updated PDF now. '
+                . 'The previous password will no longer work.',
+            'pdf_url' => route('superadmin.university.pdf', [
+                'university' => $university->id,
+            ]),
+        ])->header('Cache-Control', 'private, no-store');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Download University Credentials PDF
@@ -1175,6 +1240,23 @@ class AddUniversityController extends Controller
                 . 'A credentials PDF containing the original temporary '
                 . 'password can no longer be generated.',
         ], 422);
+    }
+
+    // Never issue a PDF with an outdated or mismatched password.
+    if (!Hash::check(
+        (string) $temporaryPassword,
+        (string) $administrator->getAuthPassword()
+    )) {
+        Log::warning('University administrator credentials need regeneration.', [
+            'university_id' => $university->id,
+            'administrator_id' => $administrator->id,
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'The saved temporary password is no longer valid. '
+                . 'Use Regenerate Password & Download PDF as Super Administrator.',
+        ], 409);
     }
 
     // Prepare credentials for the PDF.

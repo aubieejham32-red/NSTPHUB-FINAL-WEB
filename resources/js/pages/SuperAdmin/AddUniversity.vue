@@ -948,7 +948,7 @@
                             <CheckIcon />
                         </div>
 
-                        <h2>University Created</h2>
+                        <h2>{{ generatedPayload.alreadyExists ? 'University Already Exists' : 'University Created' }}</h2>
 
                         <div
                             v-if="generatedPayload.warning"
@@ -1021,6 +1021,17 @@
                             >
                                 <DocumentArrowDownIcon />
                                 Download PDF
+                            </button>
+
+                            <button
+                                type="button"
+                                class="outline-btn"
+                                :disabled="regeneratingPassword"
+                                @click="resetUniversityAdminPassword"
+                                title="Generate a new password and download a matching PDF"
+                            >
+                                <KeyIcon />
+                                {{ regeneratingPassword ? 'Regenerating...' : 'Reset Password & PDF' }}
                             </button>
 
                             <button
@@ -1146,6 +1157,7 @@ const currentStepIndex = ref(0);
 const isDragging = ref(false);
 const logoFileInput = ref(null);
 const submitting = ref(false);
+const regeneratingPassword = ref(false);
 
 /* =========================================================
    STEPS
@@ -1714,6 +1726,40 @@ const sendEmailNotification = async () => {
                 ? `${message}\n\n${backendError}`
                 : message
         );
+    }
+};
+
+/* =========================================================
+   RESET ADMIN PASSWORD AND DOWNLOAD UPDATED PDF
+========================================================= */
+
+const resetUniversityAdminPassword = async () => {
+    const id = generatedPayload.universityId;
+    if (!id || regeneratingPassword.value) return;
+
+    if (!window.confirm(
+        'Regenerate the University Administrator password? The old password will stop working. A new credentials PDF will be downloaded.'
+    )) return;
+
+    regeneratingPassword.value = true;
+    try {
+        const response = await axios.post(
+            `/superadmin/university/${id}/credentials/reset`,
+            {},
+            { headers: { Accept: 'application/json' } }
+        );
+
+        generatedPayload.pdfUrl = response.data?.pdf_url
+            ?? `/superadmin/university/pdf/${id}`;
+        generatedPayload.warning = 'A new temporary password was generated. Download the new PDF; the previous password is now invalid.';
+        generatedPayload.emailSent = false;
+
+        // Server generates the PDF on request; it is not stored in public storage.
+        window.location.assign(generatedPayload.pdfUrl);
+    } catch (error) {
+        window.alert(error.response?.data?.message ?? 'Unable to reset administrator password.');
+    } finally {
+        regeneratingPassword.value = false;
     }
 };
 

@@ -771,6 +771,20 @@
                                             </button>
 
 
+                                            <!-- RESET ADMIN PASSWORD / CREDENTIAL PDF -->
+                                            <button
+                                                type="button"
+                                                class="action-btn reset-btn"
+                                                :disabled="resettingUniversityId === uni.id"
+                                                title="Regenerate university administrator password and download PDF"
+                                                aria-label="Regenerate administrator password and download PDF"
+                                                @click="resetAndDownloadCredentials(uni)"
+                                            >
+                                                <ArrowPathIcon
+                                                    class="action-icon"
+                                                />
+                                            </button>
+
                                             <!-- DELETE -->
 
                                             <button
@@ -905,6 +919,9 @@ axios.defaults.withCredentials =
 
 const loading =
     ref(false);
+
+// Prevent accidental double resets while the request is in flight.
+const resettingUniversityId = ref(null);
 
 
 const universities =
@@ -2129,6 +2146,39 @@ const editUniversity = (
 
 };
 
+
+/*
+|--------------------------------------------------------------------------
+| Reissue Admin Password and Download Matching Credentials PDF
+|--------------------------------------------------------------------------
+*/
+const resetAndDownloadCredentials = async (university) => {
+    if (!university?.id || resettingUniversityId.value !== null) return;
+
+    const confirmed = window.confirm(
+        `Regenerate the University Administrator password for ${university.name}? ` +
+        'The previous password will stop working. A new PDF will download.'
+    );
+    if (!confirmed) return;
+
+    resettingUniversityId.value = university.id;
+    try {
+        const response = await axios.post(
+            `/superadmin/university/${university.id}/credentials/reset`,
+            {},
+            { headers: { Accept: 'application/json' } }
+        );
+
+        // Open only the local authenticated PDF route, never a user-supplied URL.
+        window.location.assign(
+            `/superadmin/university/pdf/${university.id}`
+        );
+    } catch (error) {
+        window.alert(error.response?.data?.message ?? 'Unable to reset administrator credentials.');
+    } finally {
+        resettingUniversityId.value = null;
+    }
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -3911,6 +3961,22 @@ onBeforeUnmount(
     color: #FFFFFF;
 }
 
+
+.reset-btn {
+    border-color: rgba(88, 118, 28, 0.2);
+    background: rgba(88, 118, 28, 0.09);
+    color: #58761C;
+}
+
+.reset-btn:hover {
+    background: #58761C;
+    color: #FFFFFF;
+}
+
+.reset-btn:disabled {
+    cursor: wait;
+    opacity: 0.55;
+}
 
 .delete-btn {
     border-color:

@@ -627,6 +627,16 @@ Route::middleware([
                 );
 
 
+                Route::post(
+                    '/{university}/credentials/reset',
+                    [
+                        AddUniversityController::class,
+                        'resetAdministratorCredentials',
+                    ]
+                )
+                    ->middleware('auth:superadmin')
+                    ->name('credentials.reset');
+
                 Route::get(
                     '/pdf/{university}',
                     [
