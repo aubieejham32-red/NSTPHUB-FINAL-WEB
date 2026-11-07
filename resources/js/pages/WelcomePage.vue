@@ -880,6 +880,16 @@
         Serve. Lead. Grow.
       </span>
 
+      <nav class="footer-links" aria-label="Legal information">
+    <a href="/privacy-policy">
+        Privacy Policy
+    </a>
+
+    <a href="/terms-of-service">
+        Terms of Service
+    </a>
+</nav>
+
     </footer>
 
   </div>
@@ -3679,6 +3689,28 @@ const handleSignIn = () => {
 
   }
 
+}
+
+.footer-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+
+.footer-links a {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footer-links a:hover,
+.footer-links a:focus-visible {
+    color: var(--gold);
+    text-decoration: underline;
 }
 
 </style>

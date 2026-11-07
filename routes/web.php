@@ -52,6 +52,15 @@ Route::get('/', function () {
     'Welcome'
 );
 
+// Public pages for Google OAuth verification
+
+Route::view('/privacy-policy', 'legal', [
+    'document' => 'privacy',
+])->name('privacy-policy');
+
+Route::view('/terms-of-service', 'legal', [
+    'document' => 'terms',
+])->name('terms-of-service');
 
 /*
 |--------------------------------------------------------------------------
@@ -164,6 +173,9 @@ Route::middleware(['auth:superadmin'])
         )->name('gmail.oauth.callback');
 
     });
+
+
+    
 /*
 |--------------------------------------------------------------------------
 | Super Admin Authentication
