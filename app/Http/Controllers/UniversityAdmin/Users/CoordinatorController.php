@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\UniversityAdmin\Users;
 
 use App\Http\Controllers\Controller;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\StaffCredentialsPdfResponse;
 use App\Mail\CoordinatorAccountMail;
 use App\Models\Coordinator;
 use App\Models\UniversityAdministrator;
@@ -798,6 +798,14 @@ class CoordinatorController extends Controller
 
         $password = session()->get('new_coordinator_passwords.' . $coordinator->id);
 
+        if (!is_string($password) || $password === '') {
+            \Illuminate\Support\Facades\Log::warning('Staff PDF temporary password missing from session.', [
+                'role' => 'coordinator',
+                'id' => $coordinator->id,
+                'has_session' => session()->isStarted(),
+            ]);
+        }
+
         abort_unless(
             is_string($password) && $password !== '',
             410,
@@ -807,24 +815,22 @@ class CoordinatorController extends Controller
         $university = $admin->university;
         abort_unless($university && filled($university->access_code), 404);
 
-        return Pdf::loadView('pdf.staff_credentials', [
-            'roleTitle' => 'Coordinator',
-            'fullName' => $coordinator->full_name,
-            'universityName' => $university->name,
-            'components' => array_filter([(string) $coordinator->component]),
-            'staffRole' => $this->formatCoordinatorRoleForFrontend($this->resolveCoordinatorRole($coordinator) ?? 'Coordinator'),
-            'accessCode' => $university->access_code,
-            'loginUrl' => url('/instructor-coordinator/access-code'),
-            'username' => $coordinator->username,
-            'email' => $coordinator->email,
-            'phoneNumber' => $coordinator->phone_number,
-            'temporaryPassword' => $password,
-        ])
-            ->setPaper('letter', 'portrait')
-            ->download('nstphub_coordinator_credentials_' . $coordinator->id . '.pdf')
-            ->header('Cache-Control', 'private, no-store, no-cache, must-revalidate')
-            ->header('Pragma', 'no-cache')
-            ->header('X-Content-Type-Options', 'nosniff');
+        return app(StaffCredentialsPdfResponse::class)->download(
+            [
+                'roleTitle' => 'Coordinator',
+                'fullName' => $coordinator->full_name,
+                'universityName' => $university->name,
+                'components' => array_filter([(string) $coordinator->component]),
+                'staffRole' => $this->formatCoordinatorRoleForFrontend($this->resolveCoordinatorRole($coordinator) ?? 'Coordinator'),
+                'accessCode' => $university->access_code,
+                'loginUrl' => url('/instructor-coordinator/access-code'),
+                'username' => $coordinator->username,
+                'email' => $coordinator->email,
+                'phoneNumber' => $coordinator->phone_number,
+                'temporaryPassword' => $password,
+            ],
+            'nstphub_coordinator_credentials_' . $coordinator->id . '.pdf'
+        );
     }
 
     public function edit(

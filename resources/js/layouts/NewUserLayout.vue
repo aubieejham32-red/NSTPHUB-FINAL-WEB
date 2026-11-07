@@ -438,8 +438,6 @@ const done = () => {
                 v-if="downloadPdfUrl"
                 :href="downloadPdfUrl"
                 class="download-pdf-button"
-                target="_blank"
-                rel="noopener noreferrer"
                 title="Download short bond paper PDF with account credentials"
             >
                 DOWNLOAD PDF

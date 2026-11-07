@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\UniversityAdmin\Users;
 
 use App\Http\Controllers\Controller;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\StaffCredentialsPdfResponse;
 use App\Mail\InstructorAccountMail;
 use App\Models\Instructor;
 use App\Models\UniversityAdministrator;
@@ -746,6 +746,14 @@ class InstructorController extends Controller
 
         $password = session()->get('new_instructor_passwords.' . $instructor->id);
 
+        if (!is_string($password) || $password === '') {
+            \Illuminate\Support\Facades\Log::warning('Staff PDF temporary password missing from session.', [
+                'role' => 'instructor',
+                'id' => $instructor->id,
+                'has_session' => session()->isStarted(),
+            ]);
+        }
+
         abort_unless(
             is_string($password) && $password !== '',
             410,
@@ -755,24 +763,22 @@ class InstructorController extends Controller
         $university = $admin->university;
         abort_unless($university && filled($university->access_code), 404);
 
-        return Pdf::loadView('pdf.staff_credentials', [
-            'roleTitle' => 'Instructor',
-            'fullName' => $instructor->full_name,
-            'universityName' => $university->name,
-            'components' => $instructor->componentCodes(),
-            'staffRole' => null,
-            'accessCode' => $university->access_code,
-            'loginUrl' => url('/instructor-coordinator/access-code'),
-            'username' => $instructor->username,
-            'email' => $instructor->email,
-            'phoneNumber' => $instructor->phone_number,
-            'temporaryPassword' => $password,
-        ])
-            ->setPaper('letter', 'portrait')
-            ->download('nstphub_instructor_credentials_' . $instructor->id . '.pdf')
-            ->header('Cache-Control', 'private, no-store, no-cache, must-revalidate')
-            ->header('Pragma', 'no-cache')
-            ->header('X-Content-Type-Options', 'nosniff');
+        return app(StaffCredentialsPdfResponse::class)->download(
+            [
+                'roleTitle' => 'Instructor',
+                'fullName' => $instructor->full_name,
+                'universityName' => $university->name,
+                'components' => $instructor->componentCodes(),
+                'staffRole' => null,
+                'accessCode' => $university->access_code,
+                'loginUrl' => url('/instructor-coordinator/access-code'),
+                'username' => $instructor->username,
+                'email' => $instructor->email,
+                'phoneNumber' => $instructor->phone_number,
+                'temporaryPassword' => $password,
+            ],
+            'nstphub_instructor_credentials_' . $instructor->id . '.pdf'
+        );
     }
 
     public function edit(
