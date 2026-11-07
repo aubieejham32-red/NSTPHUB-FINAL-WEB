@@ -69,8 +69,8 @@
                 @endif
                 <tr><td class="label">University Access Code</td><td class="value secret">{{ $accessCode }}</td></tr>
                 <tr><td class="label">Portal</td><td class="value portal">{{ $loginUrl }}</td></tr>
-                <tr><td class="label">Username</td><td class="value secret">{{ $username }}</td></tr>
-                <tr><td class="label">Email</td><td class="value">{{ $email }}</td></tr>
+                <tr><td class="label">Login Username</td><td class="value secret">{{ $username }}</td></tr>
+                <tr><td class="label">Login Email</td><td class="value">{{ $email }}</td></tr>
                 @if(!empty($phoneNumber))
                 <tr><td class="label">Phone Number</td><td class="value">{{ $phoneNumber }}</td></tr>
                 @endif
@@ -81,7 +81,9 @@
             </div>
             <div class="security">
                 <p class="security-title">SECURITY NOTICE</p>
-                Please change your password immediately after your first login.
+                Enter the University Access Code first, then sign in with the username OR email above
+                and the exact temporary password shown in this PDF. This password is active only until
+                it is changed or reset. Please change it immediately after your first login.
                 Never share your credentials or university access code with anyone.
             </div>
             <div class="signature">Regards,<br><strong>NSTP HUB Team</strong></div>

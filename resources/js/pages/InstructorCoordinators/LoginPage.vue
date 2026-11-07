@@ -28,21 +28,21 @@
         >
 
           <!-- ========================================================
-               EMAIL
+               EMAIL OR USERNAME
           ========================================================= -->
 
           <div class="form-group">
 
             <label for="email">
-              Email
+              Email or Username
             </label>
 
             <input
               id="email"
               v-model="form.email"
-              type="email"
-              placeholder="Enter your email"
-              autocomplete="email"
+              type="text"
+              placeholder="Enter your email or username"
+              autocomplete="username"
               required
             >
 

@@ -196,12 +196,11 @@ const sendEmail = () => {
     |--------------------------------------------------------------------------
     */
 
+    // The server reads the verified temporary password from this admin's
+    // session; it must not be posted again from the browser.
     router.post(
         `/university-admin/instructors/${props.instructor.id}/send-email`,
-        {
-            temporary_password:
-                temporaryPassword,
-        },
+        {},
         {
             preserveScroll: true,
 
@@ -358,7 +357,7 @@ const done = () => {
                     :show-access-code="true"
 
                     :download-pdf-url="
-                        !emailSent && getTemporaryPassword() && instructor?.id
+                        getTemporaryPassword() && instructor?.id
                             ? `/university-admin/instructors/${instructor.id}/credentials-pdf`
                             : ''
                     "

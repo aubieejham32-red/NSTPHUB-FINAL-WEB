@@ -259,12 +259,7 @@ const sendEmail = () => {
 
     router.post(
         `/university-admin/coordinators/${props.coordinator.id}/send-email`,
-        {
-
-            temporary_password:
-                temporaryPassword,
-
-        },
+        {},
         {
 
             preserveScroll:
@@ -458,7 +453,7 @@ const done = () => {
                     :show-access-code="true"
 
                     :download-pdf-url="
-                        !emailSent && getTemporaryPassword() && coordinator?.id
+                        getTemporaryPassword() && coordinator?.id
                             ? `/university-admin/coordinators/${coordinator.id}/credentials-pdf`
                             : ''
                     "

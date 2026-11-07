@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UniversityAdmin\Users;
 
 use App\Http\Controllers\Controller;
 use App\Support\StaffCredentialsPdfResponse;
+use App\Support\StaffTemporaryPassword;
 use App\Mail\InstructorAccountMail;
 use App\Models\Instructor;
 use App\Models\UniversityAdministrator;
@@ -533,9 +534,9 @@ class InstructorController extends Controller
         |
         */
 
-        session()->put(
-            'new_instructor_passwords.' .
-            $instructor->id,
+        app(StaffTemporaryPassword::class)->remember(
+            'instructor',
+            $instructor,
             $plainPassword
         );
 
@@ -628,11 +629,10 @@ class InstructorController extends Controller
         */
 
         $plainPassword =
-            session()->get(
-                'new_instructor_passwords.' .
-                $instructor->id,
-                ''
-            );
+            app(StaffTemporaryPassword::class)->forAccount(
+                'instructor',
+                $instructor
+            ) ?? '';
 
 
         /*
@@ -744,7 +744,7 @@ class InstructorController extends Controller
         $admin = $this->getAuthenticatedUniversityAdmin();
         $this->ensureInstructorBelongsToUniversity($instructor, $admin);
 
-        $password = session()->get('new_instructor_passwords.' . $instructor->id);
+        $password = app(StaffTemporaryPassword::class)->forAccount('instructor', $instructor);
 
         if (!is_string($password) || $password === '') {
             \Illuminate\Support\Facades\Log::warning('Staff PDF temporary password missing from session.', [
@@ -1191,6 +1191,20 @@ class InstructorController extends Controller
             }
         );
 
+        // A changed password immediately invalidates the previously issued PDF.
+        // Keep the new value available for an updated PDF in this session.
+        if (!empty($validated['password'])) {
+            app(StaffTemporaryPassword::class)->remember(
+                'instructor',
+                $instructor,
+                $validated['password']
+            );
+
+            return redirect()
+                ->route('university-admin.instructors.new', ['instructor' => $instructor->id])
+                ->with('success', 'Instructor password updated. Download the new credentials PDF.');
+        }
+
 
         /*
         |--------------------------------------------------------------------------
@@ -1257,10 +1271,7 @@ class InstructorController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        session()->forget(
-            'new_instructor_passwords.' .
-            $instructor->id
-        );
+        app(StaffTemporaryPassword::class)->forget('instructor', $instructor);
 
 
         /*
@@ -1398,9 +1409,9 @@ class InstructorController extends Controller
         */
 
         $plainPassword =
-            session()->get(
-                'new_instructor_passwords.' .
-                $instructor->id
+            app(StaffTemporaryPassword::class)->forAccount(
+                'instructor',
+                $instructor
             );
 
 
@@ -1508,16 +1519,8 @@ class InstructorController extends Controller
             );
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | Remove Temporary Password After Successful Email
-            |--------------------------------------------------------------------------
-            */
-
-            session()->forget(
-                'new_instructor_passwords.' .
-                $instructor->id
-            );
+            // Keep credentials until the admin session ends, so Download PDF
+            // still works after sending the same credentials by email.
 
 
             /*

@@ -557,7 +557,7 @@ class InstructorCoordinatorAuthController extends Controller
                 [
                     'email' => [
                         'required',
-                        'email',
+                        'string',
                         'max:255',
                     ],
 
@@ -573,10 +573,7 @@ class InstructorCoordinatorAuthController extends Controller
                 ],
                 [
                     'email.required' =>
-                        'Please enter your email address.',
-
-                    'email.email' =>
-                        'Please enter a valid email address.',
+                        'Please enter your email address or username.',
 
                     'password.required' =>
                         'Please enter your password.',
@@ -586,11 +583,11 @@ class InstructorCoordinatorAuthController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Normalize Email
+        | Normalize Email Or Username
         |--------------------------------------------------------------------------
         */
 
-        $email =
+        $identifier =
             strtolower(
                 trim(
                     $validated['email']
@@ -636,12 +633,10 @@ class InstructorCoordinatorAuthController extends Controller
                     'university_id',
                     $universityId
                 )
-                ->whereRaw(
-                    'LOWER(email) = ?',
-                    [
-                        $email,
-                    ]
-                )
+                ->where(function ($query) use ($identifier) {
+                    $query->whereRaw('LOWER(email) = ?', [$identifier])
+                        ->orWhereRaw('LOWER(username) = ?', [$identifier]);
+                })
                 ->first();
 
 
@@ -652,33 +647,8 @@ class InstructorCoordinatorAuthController extends Controller
         */
 
         if (
-            $instructor
+            $instructor && Hash::check($password, $instructor->password)
         ) {
-
-            /*
-            |--------------------------------------------------------------------------
-            | Password
-            |--------------------------------------------------------------------------
-            */
-
-            if (
-                !Hash::check(
-                    $password,
-                    $instructor->password
-                )
-            ) {
-
-                return back()
-                    ->withErrors([
-                        'login' =>
-                            'Invalid email or password.',
-                    ])
-                    ->onlyInput(
-                        'email'
-                    );
-            }
-
-
             /*
             |--------------------------------------------------------------------------
             | Instructor Active
@@ -820,12 +790,10 @@ class InstructorCoordinatorAuthController extends Controller
                     'university_id',
                     $universityId
                 )
-                ->whereRaw(
-                    'LOWER(email) = ?',
-                    [
-                        $email,
-                    ]
-                )
+                ->where(function ($query) use ($identifier) {
+                    $query->whereRaw('LOWER(email) = ?', [$identifier])
+                        ->orWhereRaw('LOWER(username) = ?', [$identifier]);
+                })
                 ->first();
 
 
@@ -836,33 +804,8 @@ class InstructorCoordinatorAuthController extends Controller
         */
 
         if (
-            $coordinator
+            $coordinator && Hash::check($password, $coordinator->password)
         ) {
-
-            /*
-            |--------------------------------------------------------------------------
-            | Password
-            |--------------------------------------------------------------------------
-            */
-
-            if (
-                !Hash::check(
-                    $password,
-                    $coordinator->password
-                )
-            ) {
-
-                return back()
-                    ->withErrors([
-                        'login' =>
-                            'Invalid email or password.',
-                    ])
-                    ->onlyInput(
-                        'email'
-                    );
-            }
-
-
             /*
             |--------------------------------------------------------------------------
             | Coordinator Active
@@ -1007,7 +950,7 @@ class InstructorCoordinatorAuthController extends Controller
         return back()
             ->withErrors([
                 'login' =>
-                    'Invalid email or password.',
+                    'Invalid email/username or password.',
             ])
             ->onlyInput(
                 'email'

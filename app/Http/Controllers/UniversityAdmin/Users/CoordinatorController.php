@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UniversityAdmin\Users;
 
 use App\Http\Controllers\Controller;
 use App\Support\StaffCredentialsPdfResponse;
+use App\Support\StaffTemporaryPassword;
 use App\Mail\CoordinatorAccountMail;
 use App\Models\Coordinator;
 use App\Models\UniversityAdministrator;
@@ -580,9 +581,9 @@ class CoordinatorController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        session()->put(
-            'new_coordinator_passwords.' .
-            $coordinator->id,
+        app(StaffTemporaryPassword::class)->remember(
+            'coordinator',
+            $coordinator,
             $plainPassword
         );
 
@@ -659,11 +660,10 @@ class CoordinatorController extends Controller
         */
 
         $plainPassword =
-            session()->get(
-                'new_coordinator_passwords.' .
-                $coordinator->id,
-                ''
-            );
+            app(StaffTemporaryPassword::class)->forAccount(
+                'coordinator',
+                $coordinator
+            ) ?? '';
 
 
         /*
@@ -796,7 +796,7 @@ class CoordinatorController extends Controller
         $admin = $this->getAuthenticatedUniversityAdmin();
         $this->ensureCoordinatorBelongsToUniversity($coordinator, $admin);
 
-        $password = session()->get('new_coordinator_passwords.' . $coordinator->id);
+        $password = app(StaffTemporaryPassword::class)->forAccount('coordinator', $coordinator);
 
         if (!is_string($password) || $password === '') {
             \Illuminate\Support\Facades\Log::warning('Staff PDF temporary password missing from session.', [
@@ -1206,6 +1206,19 @@ class CoordinatorController extends Controller
             }
         );
 
+        // Do not let a downloaded credential PDF contain an older password.
+        if (!empty($validated['password'])) {
+            app(StaffTemporaryPassword::class)->remember(
+                'coordinator',
+                $coordinator,
+                $validated['password']
+            );
+
+            return redirect()
+                ->route('university-admin.coordinators.new', ['coordinator' => $coordinator->id])
+                ->with('success', 'Coordinator password updated. Download the new credentials PDF.');
+        }
+
 
         /*
         |--------------------------------------------------------------------------
@@ -1272,10 +1285,7 @@ class CoordinatorController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        session()->forget(
-            'new_coordinator_passwords.' .
-            $coordinator->id
-        );
+        app(StaffTemporaryPassword::class)->forget('coordinator', $coordinator);
 
 
         /*
@@ -1414,9 +1424,9 @@ class CoordinatorController extends Controller
         */
 
         $plainPassword =
-            session()->get(
-                'new_coordinator_passwords.' .
-                $coordinator->id
+            app(StaffTemporaryPassword::class)->forAccount(
+                'coordinator',
+                $coordinator
             );
 
 
@@ -1526,16 +1536,8 @@ class CoordinatorController extends Controller
             );
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | Remove Temporary Password After Successful Email
-            |--------------------------------------------------------------------------
-            */
-
-            session()->forget(
-                'new_coordinator_passwords.' .
-                $coordinator->id
-            );
+            // Keep the same temporary password available for PDF download
+            // until the issuing administrator's session ends.
 
 
             /*
