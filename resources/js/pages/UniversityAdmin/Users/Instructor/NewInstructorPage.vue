@@ -357,6 +357,12 @@ const done = () => {
 
                     :show-access-code="true"
 
+                    :download-pdf-url="
+                        !emailSent && getTemporaryPassword() && instructor?.id
+                            ? `/university-admin/instructors/${instructor.id}/credentials-pdf`
+                            : ''
+                    "
+
                     :sending-email="sendingEmail"
 
                     :processing="processing"

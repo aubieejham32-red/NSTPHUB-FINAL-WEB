@@ -457,6 +457,12 @@ const done = () => {
 
                     :show-access-code="true"
 
+                    :download-pdf-url="
+                        !emailSent && getTemporaryPassword() && coordinator?.id
+                            ? `/university-admin/coordinators/${coordinator.id}/credentials-pdf`
+                            : ''
+                    "
+
                     :sending-email="
                         sendingEmail
                     "

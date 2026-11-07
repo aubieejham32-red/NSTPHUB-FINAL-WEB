@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\UniversityAdmin\Users;
 
 use App\Http\Controllers\Controller;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Mail\CoordinatorAccountMail;
 use App\Models\Coordinator;
 use App\Models\UniversityAdministrator;
@@ -784,6 +785,47 @@ class CoordinatorController extends Controller
     | Show Edit Coordinator Page
     |--------------------------------------------------------------------------
     */
+
+    /**
+     * Download credentials as a short bond paper (8.5 x 11 in) PDF.
+     * The clear-text password is read ONLY from this admin's session.
+     * No credential PDFs or clear-text passwords are stored in public storage.
+     */
+    public function downloadCredentialsPdf(Coordinator $coordinator)
+    {
+        $admin = $this->getAuthenticatedUniversityAdmin();
+        $this->ensureCoordinatorBelongsToUniversity($coordinator, $admin);
+
+        $password = session()->get('new_coordinator_passwords.' . $coordinator->id);
+
+        abort_unless(
+            is_string($password) && $password !== '',
+            410,
+            'The temporary password is no longer available. Create or reset the account password to issue new credentials.'
+        );
+
+        $university = $admin->university;
+        abort_unless($university && filled($university->access_code), 404);
+
+        return Pdf::loadView('pdf.staff_credentials', [
+            'roleTitle' => 'Coordinator',
+            'fullName' => $coordinator->full_name,
+            'universityName' => $university->name,
+            'components' => array_filter([(string) $coordinator->component]),
+            'staffRole' => $this->formatCoordinatorRoleForFrontend($this->resolveCoordinatorRole($coordinator) ?? 'Coordinator'),
+            'accessCode' => $university->access_code,
+            'loginUrl' => url('/instructor-coordinator/access-code'),
+            'username' => $coordinator->username,
+            'email' => $coordinator->email,
+            'phoneNumber' => $coordinator->phone_number,
+            'temporaryPassword' => $password,
+        ])
+            ->setPaper('letter', 'portrait')
+            ->download('nstphub_coordinator_credentials_' . $coordinator->id . '.pdf')
+            ->header('Cache-Control', 'private, no-store, no-cache, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('X-Content-Type-Options', 'nosniff');
+    }
 
     public function edit(
         Coordinator $coordinator

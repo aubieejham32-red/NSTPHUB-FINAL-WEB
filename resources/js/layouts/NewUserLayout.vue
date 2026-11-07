@@ -96,6 +96,12 @@ const props = defineProps({
     |--------------------------------------------------------------------------
     */
 
+    // Server-only credential PDF download URL; never includes a password.
+    downloadPdfUrl: {
+        type: String,
+        default: '',
+    },
+
     sendingEmail: {
         type: Boolean,
         default: false,
@@ -428,6 +434,17 @@ const done = () => {
 
         <div class="email-button-area">
 
+            <a
+                v-if="downloadPdfUrl"
+                :href="downloadPdfUrl"
+                class="download-pdf-button"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Download short bond paper PDF with account credentials"
+            >
+                DOWNLOAD PDF
+            </a>
+
             <button
                 type="button"
                 class="send-email-button"
@@ -699,6 +716,8 @@ const done = () => {
     width: 100%;
 
     display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
 
     justify-content: flex-end;
 
@@ -707,6 +726,37 @@ const done = () => {
     box-sizing: border-box;
 }
 
+
+/* PDF action matches the existing account confirmation styling. */
+.download-pdf-button {
+    min-width: 195px;
+    min-height: 52px;
+    padding: 10px 23px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #58761C;
+    border-radius: 16px;
+    background: #58761C;
+    color: #FFFFFF;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1;
+    text-decoration: none;
+    box-sizing: border-box;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.download-pdf-button:hover {
+    background-color: #435b15;
+    transform: translateY(-1px);
+}
+
+.download-pdf-button:focus-visible {
+    outline: 3px solid rgba(255, 189, 54, 0.6);
+    outline-offset: 3px;
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -965,6 +1015,12 @@ const done = () => {
         margin-top: 30px;
     }
 
+
+    .download-pdf-button {
+        min-width: 170px;
+        min-height: 48px;
+        font-size: 18px;
+    }
 
     .send-email-button {
         min-width: 170px;

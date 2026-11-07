@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\UniversityAdmin\Users;
 
 use App\Http\Controllers\Controller;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Mail\InstructorAccountMail;
 use App\Models\Instructor;
 use App\Models\UniversityAdministrator;
@@ -732,6 +733,47 @@ class InstructorController extends Controller
     | Show Edit Instructor Page
     |--------------------------------------------------------------------------
     */
+
+    /**
+     * Download credentials as a short bond paper (8.5 x 11 in) PDF.
+     * The clear-text password is read ONLY from this admin's session.
+     * No credential PDFs or clear-text passwords are stored in public storage.
+     */
+    public function downloadCredentialsPdf(Instructor $instructor)
+    {
+        $admin = $this->getAuthenticatedUniversityAdmin();
+        $this->ensureInstructorBelongsToUniversity($instructor, $admin);
+
+        $password = session()->get('new_instructor_passwords.' . $instructor->id);
+
+        abort_unless(
+            is_string($password) && $password !== '',
+            410,
+            'The temporary password is no longer available. Create or reset the account password to issue new credentials.'
+        );
+
+        $university = $admin->university;
+        abort_unless($university && filled($university->access_code), 404);
+
+        return Pdf::loadView('pdf.staff_credentials', [
+            'roleTitle' => 'Instructor',
+            'fullName' => $instructor->full_name,
+            'universityName' => $university->name,
+            'components' => $instructor->componentCodes(),
+            'staffRole' => null,
+            'accessCode' => $university->access_code,
+            'loginUrl' => url('/instructor-coordinator/access-code'),
+            'username' => $instructor->username,
+            'email' => $instructor->email,
+            'phoneNumber' => $instructor->phone_number,
+            'temporaryPassword' => $password,
+        ])
+            ->setPaper('letter', 'portrait')
+            ->download('nstphub_instructor_credentials_' . $instructor->id . '.pdf')
+            ->header('Cache-Control', 'private, no-store, no-cache, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('X-Content-Type-Options', 'nosniff');
+    }
 
     public function edit(
         Instructor $instructor

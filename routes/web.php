@@ -1288,6 +1288,17 @@ Route::prefix(
             );
 
 
+            // Download sensitive credentials only while the original
+            // temporary password remains in this admin's session.
+            Route::get(
+                '/instructors/{instructor}/credentials-pdf',
+                [
+                    InstructorController::class,
+                    'downloadCredentialsPdf',
+                ]
+            )->name('instructors.credentials-pdf');
+
+
             Route::post(
                 '/instructors/{instructor}/send-email',
                 [
@@ -1380,6 +1391,17 @@ Route::prefix(
             )->name(
                 'coordinators.new'
             );
+
+
+            // Download sensitive credentials only while the original
+            // temporary password remains in this admin's session.
+            Route::get(
+                '/coordinators/{coordinator}/credentials-pdf',
+                [
+                    CoordinatorController::class,
+                    'downloadCredentialsPdf',
+                ]
+            )->name('coordinators.credentials-pdf');
 
 
             Route::post(
