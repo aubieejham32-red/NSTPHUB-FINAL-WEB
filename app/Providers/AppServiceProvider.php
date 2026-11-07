@@ -3,34 +3,49 @@
 namespace App\Providers;
 
 use App\Mail\Transports\GmailApiTransport;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register application services.
-     */
     public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap application services.
-     */
     public function boot(): void
     {
         Schema::defaultStringLength(191);
 
         /*
         |--------------------------------------------------------------------------
-        | Register NSTP HUB Gmail API Transport
+        | Prepare DomPDF Font Directory
         |--------------------------------------------------------------------------
         |
-        | Sends emails through Google's HTTPS API instead of SMTP.
+        | Create the directory automatically when the application runs.
+        | This is particularly important for Railway deployments.
         |
+        */
+
+        try {
+            File::ensureDirectoryExists(
+                storage_path('fonts'),
+                0775,
+                true
+            );
+        } catch (\Throwable $exception) {
+            Log::error('Unable to prepare DomPDF font directory.', [
+                'message' => $exception->getMessage(),
+            ]);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Register Gmail API Mail Transport
+        |--------------------------------------------------------------------------
         */
 
         Mail::extend('gmail-api', function (array $config) {
