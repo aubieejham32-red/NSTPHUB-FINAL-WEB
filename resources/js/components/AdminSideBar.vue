@@ -1042,6 +1042,9 @@ const isActive = (
     height:
         100vh;
 
+    height:
+        100dvh;
+
     background:
         #EFEBE2;
 
@@ -1062,8 +1065,20 @@ const isActive = (
     position:
         relative;
 
-    overflow:
+    overflow-x:
         hidden;
+
+    overflow-y:
+        auto;
+
+    overscroll-behavior-y:
+        contain;
+
+    scrollbar-width:
+        thin;
+
+    scrollbar-color:
+        #BEBEBE transparent;
 
     transition:
         width
@@ -1099,6 +1114,21 @@ const isActive = (
 
     min-height:
         88px;
+
+    flex-shrink:
+        0;
+
+    position:
+        sticky;
+
+    top:
+        0;
+
+    z-index:
+        2;
+
+    background:
+        #EFEBE2;
 
     display:
         flex;
@@ -1230,6 +1260,9 @@ const isActive = (
 
     width:
         100%;
+
+    flex-shrink:
+        0;
 
     padding:
         15px
@@ -1514,6 +1547,8 @@ const isActive = (
 
     width: 100%;
 
+    flex-shrink: 0;
+
     padding:
         0
         28px
@@ -1691,6 +1726,9 @@ const isActive = (
 
     width:
         100%;
+
+    flex-shrink:
+        0;
 
     padding:
         0
