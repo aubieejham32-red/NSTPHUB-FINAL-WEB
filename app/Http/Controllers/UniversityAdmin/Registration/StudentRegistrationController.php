@@ -492,6 +492,19 @@ class StudentRegistrationController extends Controller
             ]);
         }
 
+        // A database path alone does not mean the signature survived a
+        // Railway redeployment. Do not approve a registration whose actual
+        // signature file is missing from both private and legacy public disks.
+        if (
+            !Storage::disk('local')->exists($student->signature_path)
+            && !Storage::disk('public')->exists($student->signature_path)
+        ) {
+            return back()->withErrors([
+                'approval' =>
+                    'The student signature file is missing from server storage. Restore the file or ask the student to submit a new signature before approval.',
+            ]);
+        }
+
 
         /*
         |--------------------------------------------------------------------------
@@ -1190,6 +1203,12 @@ class StudentRegistrationController extends Controller
                 'local'
             );
 
+        // Legacy installations saved signatures on the public disk. Only
+        // allow a role-authorized page to read those historical files.
+        if (!$disk->exists($student->signature_path)) {
+            $disk = Storage::disk('public');
+        }
+
 
         if (
             !$disk->exists(
@@ -1221,7 +1240,7 @@ class StudentRegistrationController extends Controller
 
             [
                 'Content-Type' =>
-                    'image/svg+xml',
+                    $disk->mimeType($student->signature_path) ?: 'image/svg+xml',
 
                 'Cache-Control' =>
                     'private, no-store, no-cache, must-revalidate',

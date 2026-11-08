@@ -204,6 +204,26 @@ class DigitalStudentIdController extends Controller
                     )
                     : null;
 
+            // Render the QR inside this authenticated JSON response as well.
+            // Android native image requests can lose Authorization headers.
+            // Keep the underlying QR token on the server, never a JSON field.
+            $qrCodeDataUri = null;
+
+            if ($credentialsReady) {
+                $qrImage = (new PngWriter())->write(new QrCode(
+                    data: 'NSTPHUB:ATTENDANCE:'.$student->qr_token,
+                    encoding: new Encoding('UTF-8'),
+                    errorCorrectionLevel: ErrorCorrectionLevel::High,
+                    size: 420,
+                    margin: 12,
+                    roundBlockSizeMode: RoundBlockSizeMode::Margin,
+                ));
+
+                $qrCodeDataUri = 'data:image/png;base64,'.base64_encode(
+                    $qrImage->getString()
+                );
+            }
+
 
             /*
             |--------------------------------------------------------------------------
@@ -233,6 +253,9 @@ class DigitalStudentIdController extends Controller
 
                 'qr_code_url' =>
                     $qrCodeUrl,
+
+                'qr_code_data_uri' =>
+                    $qrCodeDataUri,
 
 
                 /*

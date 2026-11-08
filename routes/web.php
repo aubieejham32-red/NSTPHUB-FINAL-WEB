@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\PublicMediaController;
 
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\GmailOAuthController;
@@ -34,6 +35,12 @@ use App\Http\Controllers\InstructorCoordinators\AttendanceController;
 use App\Http\Controllers\InstructorCoordinators\ExcuseLetterController;
 use App\Http\Controllers\InstructorCoordinators\PdfExportController;
 use App\Http\Controllers\InstructorCoordinators\DashboardController as InstructorCoordinatorDashboardController;
+
+// Use Laravel as a fallback for public uploads when Railway/Caddy does not
+// follow the public/storage symlink. Only images on the public disk are served.
+Route::get('/storage/{path}', [PublicMediaController::class, 'show'])
+    ->where('path', '.*')
+    ->name('public-media.show');
 
 
 /*

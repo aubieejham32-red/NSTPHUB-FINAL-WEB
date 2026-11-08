@@ -1384,6 +1384,10 @@ class StudentInformationController extends Controller
                 'local'
             );
 
+        if (!$disk->exists($signaturePath)) {
+            $disk = Storage::disk('public');
+        }
+
 
         if (
             !$disk->exists(
