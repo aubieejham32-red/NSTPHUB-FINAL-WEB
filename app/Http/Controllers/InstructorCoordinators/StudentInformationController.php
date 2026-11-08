@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\RotcStudentProfile;
 use App\Models\User;
 use App\Support\NstpComponentAccess;
+use App\Support\StudentProfileMedia;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\QrCode;
@@ -1894,14 +1895,9 @@ class StudentInformationController extends Controller
                 )
             )
         ) {
-            $qrCodeUrl =
-                route(
-                    'instructor-coordinator.students.qr-code',
-                    [
-                        'student' =>
-                            $student->id,
-                    ]
-                );
+            $qrCodeUrl = StudentProfileMedia::qrCode(
+                (string) $student->getAttribute('qr_token')
+            );
         }
 
 
@@ -1922,14 +1918,9 @@ class StudentInformationController extends Controller
                 )
             )
         ) {
-            $signatureUrl =
-                route(
-                    'instructor-coordinator.students.signature',
-                    [
-                        'student' =>
-                            $student->id,
-                    ]
-                );
+            $signatureUrl = StudentProfileMedia::signature(
+                (string) $student->getAttribute('signature_path')
+            );
         }
 
 

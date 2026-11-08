@@ -5,6 +5,7 @@ namespace App\Http\Controllers\UniversityAdmin\Registration;
 use App\Http\Controllers\Controller;
 use App\Models\UniversityAdministrator;
 use App\Models\User;
+use App\Support\StudentProfileMedia;
 use Carbon\Carbon;
 use DateTimeInterface;
 use Endroid\QrCode\Encoding\Encoding;
@@ -432,9 +433,8 @@ class StudentRegistrationController extends Controller
                     filled(
                         $student->signature_path
                     )
-                        ? route(
-                            'university-admin.student-registration.signature',
-                            $student
+                        ? StudentProfileMedia::signature(
+                            $student->signature_path
                         )
                         : '',
 
@@ -1028,9 +1028,8 @@ class StudentRegistrationController extends Controller
                     ),
 
                 'qrCodeUrl' =>
-                    route(
-                        'university-admin.student-registration.qr-code',
-                        $student
+                    StudentProfileMedia::qrCode(
+                        (string) $student->qr_token
                     ),
 
                 'universityLogoUrl' =>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\RotcMsRecord;
 use App\Models\RotcStudentProfile;
 use App\Models\User;
+use App\Support\StudentProfileMedia;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -1595,14 +1596,9 @@ class StudentController extends Controller
             )
         ) {
 
-            $qrCodeUrl =
-                route(
-                    'university-admin.student-registration.qr-code',
-                    [
-                        'student' =>
-                            $studentRecord->id,
-                    ]
-                );
+            $qrCodeUrl = StudentProfileMedia::qrCode(
+                (string) $studentRecord->getAttribute('qr_token')
+            );
         }
 
 
@@ -1622,14 +1618,9 @@ class StudentController extends Controller
             )
         ) {
 
-            $signatureUrl =
-                route(
-                    'university-admin.student-registration.signature',
-                    [
-                        'student' =>
-                            $studentRecord->id,
-                    ]
-                );
+            $signatureUrl = StudentProfileMedia::signature(
+                $studentRecord->signature_path
+            );
         }
 
 
