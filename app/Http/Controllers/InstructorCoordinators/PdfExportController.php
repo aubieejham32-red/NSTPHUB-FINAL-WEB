@@ -318,7 +318,8 @@ class PdfExportController extends Controller
                 );
 
 
-        return $pdf->download(
+        return $this->downloadPdf(
+            $pdf,
             'nstp-attendance-'
             .
             strtolower(
@@ -545,7 +546,8 @@ class PdfExportController extends Controller
                 );
 
 
-        return $pdf->download(
+        return $this->downloadPdf(
+            $pdf,
             'attendance-'
             .
             $this->safeFilename(
@@ -666,7 +668,8 @@ class PdfExportController extends Controller
                 );
 
 
-        return $pdf->download(
+        return $this->downloadPdf(
+            $pdf,
             'nstp-student-list-'
             .
             strtolower(
@@ -744,7 +747,8 @@ class PdfExportController extends Controller
             'studentSignature' => $studentSignature,
         ])->setPaper([0, 0, 612, 936], 'portrait');
 
-        return $pdf->download(
+        return $this->downloadPdf(
+            $pdf,
             'nstp-registration-' . $this->safeFilename($studentRecord->full_name) . '.pdf'
         );
     }
@@ -1580,6 +1584,26 @@ class PdfExportController extends Controller
     | SAFE PDF FILE NAME
     |--------------------------------------------------------------------------
     */
+
+    /**
+     * Dompdf's download() sets Content-Length to the raw PDF byte count.
+     * The Railway PHP HTTP handler has rejected these downloads with
+     * "http: wrote more than the declared Content-Length", disconnecting
+     * Chrome before it can finish saving the PDF.  Preserve the generated
+     * PDF and its attachment filename, but let the HTTP server frame the
+     * actual response body rather than forcing an incorrect fixed length.
+     */
+    private function downloadPdf(
+        \Barryvdh\DomPDF\PDF $pdf,
+        string $filename
+    ): Response {
+        $response = $pdf->download($filename);
+
+        $response->headers->remove('Content-Length');
+        $response->headers->set('Cache-Control', 'private, no-store');
+
+        return $response;
+    }
 
     private function safeFilename(
         string $value
