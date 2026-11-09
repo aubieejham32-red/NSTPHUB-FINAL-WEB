@@ -1994,11 +1994,14 @@ class MobileExcuseLetterController extends Controller
                     ->status,
 
 
+            'logo' =>
+                $university->logo,
+
+
             'logo_url' =>
-                $this->publicFileUrl(
-                    $request,
-                    $university->logo
-                ),
+                $university->logo
+                    ? '/api/mobile/universities/'.$university->id.'/logo'
+                    : null,
         ];
     }
 

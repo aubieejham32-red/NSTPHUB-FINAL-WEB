@@ -173,18 +173,9 @@ class DigitalStudentIdController extends Controller
             */
 
             $universityLogoUrl =
-                $this->absoluteRouteUrl(
-                    request:
-                        $request,
-
-                    routeName:
-                        'api.mobile.university.logo',
-
-                    parameters: [
-                        'university' =>
-                            $university->id,
-                    ]
-                );
+                $university->logo
+                    ? '/api/mobile/universities/'.$university->id.'/logo'
+                    : null;
 
 
             /*
@@ -404,8 +395,14 @@ class DigitalStudentIdController extends Controller
                     'semester' =>
                         $university->semester,
 
+                    'logo' =>
+                        $university->logo,
+
                     'logo_url' =>
                         $universityLogoUrl,
+
+                    'logo_updated_at' =>
+                        $university->updated_at?->toISOString(),
                 ],
             ]);
 

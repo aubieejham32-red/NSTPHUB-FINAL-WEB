@@ -569,6 +569,9 @@ class UniversityController extends Controller
                     university: $university
                 ),
 
+            'logo_updated_at' =>
+                $university->updated_at?->toISOString(),
+
 
             /*
             |--------------------------------------------------------------------------
@@ -669,22 +672,16 @@ class UniversityController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Laravel Logo API
+        | Relative API URL
         |--------------------------------------------------------------------------
+        |
+        | Railway may report an internal hostname or HTTP scheme behind its
+        | reverse proxy. The mobile client attaches its configured server URL.
+        | The endpoint itself reads the logo path from this university record.
+        |
         */
 
-        return
-            rtrim(
-                $request
-                    ->getSchemeAndHttpHost(),
-                '/'
-            )
-            .
-            '/api/mobile/universities/'
-            .
-            $university->id
-            .
-            '/logo';
+        return '/api/mobile/universities/'.$university->id.'/logo';
     }
 
 

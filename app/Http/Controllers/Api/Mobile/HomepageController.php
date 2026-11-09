@@ -326,16 +326,12 @@ class HomepageController extends Controller
                 */
 
                 'logo_url' =>
-                    $request
-                        ->getSchemeAndHttpHost()
-                    .
-                    '/api/mobile/universities/'
-                    .
-                    $student
-                        ->university
-                        ->id
-                    .
-                    '/logo',
+                    $student->university->logo
+                        ? '/api/mobile/universities/'.$student->university->id.'/logo'
+                        : null,
+
+                'logo_updated_at' =>
+                    $student->university->updated_at?->toISOString(),
             ],
 
 

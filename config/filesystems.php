@@ -42,7 +42,10 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            // Set NSTPHUB_PUBLIC_UPLOAD_ROOT to a persistent mounted volume on
+            // Railway. Otherwise uploaded logos disappear on a new deploy.
+            // Local WAMP installations continue to use storage/app/public.
+            'root' => env('NSTPHUB_PUBLIC_UPLOAD_ROOT') ?: storage_path('app/public'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
 
