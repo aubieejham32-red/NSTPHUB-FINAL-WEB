@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api\Mobile;
 use App\Http\Controllers\Controller;
 use App\Models\University;
 use App\Models\User;
+use App\Support\LegacyPublicUpload;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -356,7 +358,7 @@ class UniversityController extends Controller
 
     public function logo(
         University $university
-    ): Response {
+    ): Response|BinaryFileResponse {
         /*
         |--------------------------------------------------------------------------
         | Database Logo
@@ -402,14 +404,19 @@ class UniversityController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        if (
-            !Storage::disk(
-                'public'
-            )
-                ->exists(
-                    $path
-                )
-        ) {
+        if (!Storage::disk('public')->exists($path)) {
+            $legacyFile = LegacyPublicUpload::recover($path);
+
+            if ($legacyFile && !Storage::disk('public')->exists($path)) {
+                return response()->file($legacyFile, [
+                    'Content-Type' => mime_content_type($legacyFile) ?: 'image/png',
+                    'Cache-Control' => 'public, max-age=3600',
+                    'X-Content-Type-Options' => 'nosniff',
+                ]);
+            }
+        }
+
+        if (!Storage::disk('public')->exists($path)) {
             Log::warning(
                 'University logo file does not exist.',
                 [

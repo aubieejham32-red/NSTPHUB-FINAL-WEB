@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ExcuseLetter;
 use App\Models\Instructor;
 use App\Models\User;
+use App\Support\LegacyPublicUpload;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -894,11 +895,13 @@ class MobileExcuseLetterController extends Controller
             );
 
 
-        if (
-            !$disk->exists(
-                $path
-            )
-        ) {
+        $legacyFile = null;
+
+        if (!$disk->exists($path)) {
+            $legacyFile = LegacyPublicUpload::recover($path);
+        }
+
+        if (!$disk->exists($path) && !$legacyFile) {
             abort(
                 404,
                 'Evidence file not found.'
@@ -927,9 +930,9 @@ class MobileExcuseLetterController extends Controller
 
                 $mimeType =
                     (string)
-                    $disk->mimeType(
-                        $path
-                    );
+                    ($disk->exists($path)
+                        ? $disk->mimeType($path)
+                        : mime_content_type($legacyFile));
 
             } catch (
                 Throwable
@@ -947,10 +950,9 @@ class MobileExcuseLetterController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $absolutePath =
-            $disk->path(
-                $path
-            );
+        $absolutePath = $disk->exists($path)
+            ? $disk->path($path)
+            : $legacyFile;
 
 
         $fileName =
@@ -1000,10 +1002,9 @@ class MobileExcuseLetterController extends Controller
 
         try {
 
-            $size =
-                $disk->size(
-                    $path
-                );
+            $size = $disk->exists($path)
+                ? $disk->size($path)
+                : filesize($absolutePath);
 
 
             if (
@@ -2279,13 +2280,10 @@ class MobileExcuseLetterController extends Controller
             );
 
 
-        return rtrim(
-            $request
-                ->getSchemeAndHttpHost(),
-            '/'
-        )
-        .
-        '/api/mobile/excuse-letters/'
+        // Return a relative API URL. Railway's TLS-terminating proxy can make
+        // getSchemeAndHttpHost() return an internal HTTP origin, which Android
+        // refuses to load. The mobile client resolves this against SERVER_URL.
+        return '/api/mobile/excuse-letters/'
         .
         $letter->id
         .

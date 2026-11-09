@@ -32,7 +32,12 @@ return [
 
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
+            // Private uploads also need to survive Railway redeployments.
+            // Mount a Railway volume at /app/storage/app (or set the override).
+            'root' => env('NSTPHUB_PRIVATE_UPLOAD_ROOT')
+                ?: (env('RAILWAY_VOLUME_MOUNT_PATH')
+                    ? rtrim(env('RAILWAY_VOLUME_MOUNT_PATH'), '/').'/private'
+                    : storage_path('app/private')),
             // Private local files must not claim the public /storage URL.
             // Uploaded photos/logos use the public disk below.
             'serve' => false,
@@ -42,10 +47,14 @@ return [
 
         'public' => [
             'driver' => 'local',
-            // Set NSTPHUB_PUBLIC_UPLOAD_ROOT to a persistent mounted volume on
-            // Railway. Otherwise uploaded logos disappear on a new deploy.
-            // Local WAMP installations continue to use storage/app/public.
-            'root' => env('NSTPHUB_PUBLIC_UPLOAD_ROOT') ?: storage_path('app/public'),
+            // Railway automatically supplies RAILWAY_VOLUME_MOUNT_PATH when a
+            // persistent volume is attached. Keep public and private files in
+            // separate directories on that volume. WAMP remains unchanged.
+            // NSTPHUB_PUBLIC_UPLOAD_ROOT still overrides the default, if set.
+            'root' => env('NSTPHUB_PUBLIC_UPLOAD_ROOT')
+                ?: (env('RAILWAY_VOLUME_MOUNT_PATH')
+                    ? rtrim(env('RAILWAY_VOLUME_MOUNT_PATH'), '/').'/public'
+                    : storage_path('app/public')),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
 
@@ -85,7 +94,10 @@ return [
     */
 
     'links' => [
-        public_path('storage') => storage_path('app/public'),
+        public_path('storage') => env('NSTPHUB_PUBLIC_UPLOAD_ROOT')
+            ?: (env('RAILWAY_VOLUME_MOUNT_PATH')
+                ? rtrim(env('RAILWAY_VOLUME_MOUNT_PATH'), '/').'/public'
+                : storage_path('app/public')),
     ],
 
 ];
