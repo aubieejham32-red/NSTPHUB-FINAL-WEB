@@ -657,7 +657,7 @@ Route::prefix('mobile')
                         'updateProfilePhoto',
                     ]
                 )
-                    ->middleware('throttle:10,1')
+                    ->middleware('throttle:student-profile-photo-upload')
                     ->name(
                         'api.mobile.profile.photo'
                     );
@@ -718,7 +718,7 @@ Route::prefix('mobile')
                         'updateProfilePhoto',
                     ]
                 )
-                    ->middleware('throttle:10,1')
+                    ->middleware('throttle:student-profile-photo-upload')
                     ->name(
                         'api.mobile.rotc-profile.photo'
                     );

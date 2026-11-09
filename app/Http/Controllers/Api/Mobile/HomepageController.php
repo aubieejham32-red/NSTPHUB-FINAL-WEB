@@ -8,6 +8,7 @@ use App\Models\ExcuseLetter;
 use App\Models\Report;
 use App\Models\Schedule;
 use App\Models\User;
+use App\Support\PublicMediaUrl;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -921,38 +922,6 @@ class HomepageController extends Controller
         Request $request,
         ?string $path
     ): ?string {
-        if (
-            blank(
-                $path
-            )
-        ) {
-            return null;
-        }
-
-        if (
-            Str::startsWith(
-                $path,
-                [
-                    'http://',
-                    'https://',
-                ]
-            )
-        ) {
-            return $path;
-        }
-
-        $relativeUrl =
-            Storage::disk(
-                'public'
-            )
-                ->url(
-                    $path
-                );
-
-        return
-            $request
-                ->getSchemeAndHttpHost()
-            .
-            $relativeUrl;
+        return PublicMediaUrl::forRequest($request, $path);
     }
 }

@@ -2249,19 +2249,6 @@ class MobileAuthController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $relativeUrl =
-            Storage::disk(
-                'public'
-            )
-                ->url(
-                    $path
-                );
-
-
-        return
-            $request
-                ->getSchemeAndHttpHost()
-            .
-            $relativeUrl;
+        return \App\Support\PublicMediaUrl::forRequest($request, $path);
     }
 }

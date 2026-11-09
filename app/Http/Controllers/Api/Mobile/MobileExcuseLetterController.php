@@ -2098,26 +2098,7 @@ class MobileExcuseLetterController extends Controller
         }
 
 
-        $storageUrl =
-            Storage::disk(
-                'public'
-            )->url(
-                $path
-            );
-
-
-        return rtrim(
-            $request
-                ->getSchemeAndHttpHost(),
-            '/'
-        )
-        .
-        '/'
-        .
-        ltrim(
-            $storageUrl,
-            '/'
-        );
+        return \App\Support\PublicMediaUrl::forRequest($request, $path);
     }
 
 

@@ -729,72 +729,7 @@ class DigitalStudentIdController extends Controller
         }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Remove Leading Slash
-        |--------------------------------------------------------------------------
-        */
-
-        $path =
-            ltrim(
-                $path,
-                '/'
-            );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Already /storage/... Path
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            str_starts_with(
-                $path,
-                'storage/'
-            )
-        ) {
-            return
-                $request
-                    ->getSchemeAndHttpHost()
-                .
-                '/'
-                .
-                $path;
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Laravel Public Disk URL
-        |--------------------------------------------------------------------------
-        */
-
-        $relativeUrl =
-            Storage::disk(
-                'public'
-            )
-                ->url(
-                    $path
-                );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Make URL Reachable From Phone
-        |--------------------------------------------------------------------------
-        */
-
-        return
-            $request
-                ->getSchemeAndHttpHost()
-            .
-            '/'
-            .
-            ltrim(
-                $relativeUrl,
-                '/'
-            );
+        return \App\Support\PublicMediaUrl::forRequest($request, $path);
     }
 
 
