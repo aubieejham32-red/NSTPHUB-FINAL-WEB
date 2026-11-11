@@ -2659,75 +2659,17 @@ class AttendanceController extends Controller
     private function coordinatorRole(
         object $coordinator
     ): string {
-        $candidates = [
-            $coordinator->role
-            ??
-            null,
+        // Use only the Spatie role actually assigned to this account.
+        // Unverified role-like columns must not grant attendance access.
+        if ($coordinator instanceof Coordinator) {
+            $role = $coordinator->coordinatorRole();
 
-            $coordinator->coordinator_role
-            ??
-            null,
-
-            $coordinator->type
-            ??
-            null,
-        ];
-
-        if (
-            method_exists(
-                $coordinator,
-                'getRoleNames'
-            )
-        ) {
-            foreach (
-                $coordinator->getRoleNames()
-                as
-                $role
-            ) {
-                $candidates[] =
-                    $role;
+            if ($role !== null) {
+                return $role;
             }
         }
 
-        foreach (
-            $candidates
-            as
-            $candidate
-        ) {
-            $normalized =
-                strtolower(
-                    trim(
-                        str_replace(
-                            [
-                                '_',
-                                ' ',
-                            ],
-                            '-',
-                            (string) (
-                                $candidate
-                                ??
-                                ''
-                            )
-                        )
-                    )
-                );
-
-            if (
-                in_array(
-                    $normalized,
-                    [
-                        'coordinator-attendance',
-                        'coordinator-announcement',
-                        'coordinator-schedule',
-                    ],
-                    true
-                )
-            ) {
-                return $normalized;
-            }
-        }
-
-        return 'coordinator';
+        abort(403, 'Your coordinator account has no recognized assigned role.');
     }
 
 

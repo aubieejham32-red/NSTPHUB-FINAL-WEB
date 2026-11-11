@@ -1832,6 +1832,7 @@ Route::prefix(
                     ->middleware(
                         'throttle:30,1'
                     )
+                    ->middleware('coordinator.module:attendance')
                     ->name(
                         'schedule.update'
                     );
@@ -1873,6 +1874,7 @@ Route::prefix(
                     ->middleware(
                         'throttle:30,1'
                     )
+                    ->middleware('coordinator.module:attendance')
                     ->name(
                         'schedule.destroy'
                     );
@@ -1906,6 +1908,7 @@ Route::prefix(
                     ->middleware(
                         'throttle:30,1'
                     )
+                    ->middleware('coordinator.module:attendance')
                     ->name(
                         'scan'
                     );
@@ -1956,6 +1959,7 @@ Route::prefix(
                     ->whereNumber(
                         'student'
                     )
+                    ->middleware('coordinator.module:attendance')
                     ->name(
                         'students.status.update'
                     );
@@ -2020,6 +2024,7 @@ Route::prefix(
                                 ->whereNumber(
                                     'excuseLetter'
                                 )
+                                ->middleware('coordinator.module:excuse-letters')
                                 ->name(
                                     'approve'
                                 );
@@ -2031,6 +2036,7 @@ Route::prefix(
                                 ->whereNumber(
                                     'excuseLetter'
                                 )
+                                ->middleware('coordinator.module:excuse-letters')
                                 ->name(
                                     'reject'
                                 );
@@ -2069,6 +2075,7 @@ Route::prefix(
             ->middleware(
                 'auth:university_admin,instructor,coordinator'
             )
+            ->middleware('coordinator.module:announcements')
             ->name(
                 'announcements.store'
             );
@@ -2084,6 +2091,7 @@ Route::prefix(
             ->middleware(
                 'auth:university_admin,instructor,coordinator'
             )
+            ->middleware('coordinator.module:announcements')
             ->name(
                 'announcements.update'
             );
@@ -2099,6 +2107,7 @@ Route::prefix(
             ->middleware(
                 'auth:university_admin,instructor,coordinator'
             )
+            ->middleware('coordinator.module:announcements')
             ->name(
                 'announcements.destroy'
             );
@@ -2135,6 +2144,7 @@ Route::prefix(
             ->middleware(
                 'auth:university_admin,instructor,coordinator'
             )
+            ->middleware('coordinator.module:schedules')
             ->name(
                 'schedules.store'
             );
@@ -2150,6 +2160,7 @@ Route::prefix(
             ->middleware(
                 'auth:university_admin,instructor,coordinator'
             )
+            ->middleware('coordinator.module:schedules')
             ->name(
                 'schedules.update'
             );
@@ -2165,6 +2176,7 @@ Route::prefix(
             ->middleware(
                 'auth:university_admin,instructor,coordinator'
             )
+            ->middleware('coordinator.module:schedules')
             ->name(
                 'schedules.destroy'
             );
@@ -2355,6 +2367,7 @@ Route::prefix(
                     ->whereNumber(
                         'student'
                     )
+                    ->middleware('coordinator.module:students')
                     ->name(
                         'edit'
                     );
@@ -2373,6 +2386,7 @@ Route::prefix(
                     ->whereNumber(
                         'student'
                     )
+                    ->middleware('coordinator.module:students')
                     ->name(
                         'update'
                     );

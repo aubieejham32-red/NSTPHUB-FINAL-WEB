@@ -256,12 +256,13 @@ class StudentInformationController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | Student Information is available to IC roles
+                | Student Information is read-only for coordinators.
+                | Only instructors and university administrators may edit.
                 |--------------------------------------------------------------------------
                 */
 
                 'canManage' =>
-                    true,
+                    $access['guard'] !== 'coordinator',
 
 
                 /*
@@ -378,6 +379,8 @@ class StudentInformationController extends Controller
         $access =
             $this->resolveAccess();
 
+        $this->ensureCanEditStudents($access);
+
 
         $studentRecord =
             $this->findAccessibleStudent(
@@ -480,6 +483,8 @@ class StudentInformationController extends Controller
     ): RedirectResponse {
         $access =
             $this->resolveAccess();
+
+        $this->ensureCanEditStudents($access);
 
 
         $studentRecord =
@@ -1450,6 +1455,14 @@ class StudentInformationController extends Controller
     | Coordinator is checked second.
     |
     */
+
+    private function ensureCanEditStudents(array $access): void
+    {
+        if ($access['guard'] === 'coordinator') {
+            abort(403, 'Student Information is view-only for coordinators.');
+        }
+    }
+
 
     private function resolveAccess(): array
     {

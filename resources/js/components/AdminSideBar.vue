@@ -172,7 +172,7 @@
                             studentInformationUrl
                         ),
                 }"
-                title="Student's Information"
+                :title="moduleTitle(`Student's Information`, 'students')"
             >
 
                 <span class="nav-icon">
@@ -191,6 +191,8 @@
                     Student's Information
                 </span>
 
+                <span v-if="!isCollapsed && isViewOnly('students')" class="nav-view-only">VIEW</span>
+
             </Link>
 
 
@@ -207,7 +209,7 @@
                             attendanceUrl
                         ),
                 }"
-                title="Attendance"
+                :title="moduleTitle('Attendance', 'attendance')"
             >
 
                 <span class="nav-icon">
@@ -226,6 +228,8 @@
                     Attendance
                 </span>
 
+                <span v-if="!isCollapsed && isViewOnly('attendance')" class="nav-view-only">VIEW</span>
+
             </Link>
 
 
@@ -242,7 +246,7 @@
                             announcementUrl
                         ),
                 }"
-                title="Announcement"
+                :title="moduleTitle('Announcement', 'announcements')"
             >
 
                 <span class="nav-icon">
@@ -261,6 +265,8 @@
                     Announcement
                 </span>
 
+                <span v-if="!isCollapsed && isViewOnly('announcements')" class="nav-view-only">VIEW</span>
+
             </Link>
 
 
@@ -277,7 +283,7 @@
                             scheduleUrl
                         ),
                 }"
-                title="Schedule"
+                :title="moduleTitle('Schedule', 'schedules')"
             >
 
                 <span class="nav-icon">
@@ -296,6 +302,8 @@
                     Schedule
                 </span>
 
+                <span v-if="!isCollapsed && isViewOnly('schedules')" class="nav-view-only">VIEW</span>
+
             </Link>
 
 
@@ -312,7 +320,7 @@
                             excuseLetterUrl
                         ),
                 }"
-                title="Excuse Letter"
+                :title="moduleTitle('Excuse Letter', 'excuse-letters')"
             >
 
                 <span class="nav-icon">
@@ -330,6 +338,8 @@
                 >
                     Excuse Letter
                 </span>
+
+                <span v-if="!isCollapsed && isViewOnly('excuse-letters')" class="nav-view-only">VIEW</span>
 
             </Link>
 
@@ -446,6 +456,42 @@ const normalizedRole = computed(() =>
             '-'
         )
 );
+
+
+/*
+|--------------------------------------------------------------------------
+| Coordinator Module Access
+|--------------------------------------------------------------------------
+|
+| All module links remain visible. The VIEW marker identifies modules in
+| which the logged-in coordinator may browse but cannot make changes.
+|
+*/
+
+const isViewOnly = (module) => {
+    const role = normalizedRole.value;
+
+    if (!role.startsWith('coordinator-')) {
+        return false;
+    }
+
+    if (module === 'attendance' || module === 'excuse-letters') {
+        return role !== 'coordinator-attendance';
+    }
+
+    if (module === 'announcements') {
+        return role !== 'coordinator-announcement';
+    }
+
+    if (module === 'schedules') {
+        return role !== 'coordinator-schedule';
+    }
+
+    return true;
+};
+
+const moduleTitle = (title, module) =>
+    isViewOnly(module) ? `${title} (View only)` : title;
 
 
 const isUniversityAdmin = computed(() =>
@@ -2040,6 +2086,21 @@ const isActive = (
     white-space:
         nowrap;
 
+}
+
+.nav-view-only {
+    margin-left: auto;
+    flex-shrink: 0;
+    padding: 3px 5px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    color: #64748b;
+    background: #f8fafc;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.02em;
 }
 
 
