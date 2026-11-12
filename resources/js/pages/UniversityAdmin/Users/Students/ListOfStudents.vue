@@ -2,6 +2,8 @@
 
 import {
     computed,
+    nextTick,
+    ref,
 } from 'vue';
 
 import {
@@ -13,6 +15,7 @@ import {
     CircleCheck,
     Eye,
     Pencil,
+    Trash2,
     TriangleAlert,
     UserX,
 } from 'lucide-vue-next';
@@ -783,6 +786,61 @@ const editStudent = (
 
 };
 
+/*
+|--------------------------------------------------------------------------
+| Delete Student – deliberate, irreversible action
+|--------------------------------------------------------------------------
+*/
+
+const studentPendingDeletion = ref(null);
+const deleteDialog = ref(null);
+const deletionInProgress = ref(false);
+const deletionError = ref('');
+const deletionSuccess = ref('');
+
+const confirmDeleteStudent = (student) => {
+    if (deletionInProgress.value) return;
+    const studentId = Number(student?.id);
+    if (!Number.isInteger(studentId) || studentId <= 0) return;
+
+    deletionError.value = '';
+    deletionSuccess.value = '';
+    studentPendingDeletion.value = student;
+    nextTick(() => deleteDialog.value?.focus());
+};
+
+const cancelDeleteStudent = () => {
+    if (deletionInProgress.value) return;
+    studentPendingDeletion.value = null;
+    deletionError.value = '';
+};
+
+const deleteStudent = () => {
+    const student = studentPendingDeletion.value;
+    const studentId = Number(student?.id);
+
+    if (deletionInProgress.value || !Number.isInteger(studentId) || studentId <= 0) {
+        return;
+    }
+
+    deletionInProgress.value = true;
+    deletionError.value = '';
+
+    router.delete(`/university-admin/users/students/${studentId}`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            deletionSuccess.value = `${student.full_name} was deleted successfully.`;
+            studentPendingDeletion.value = null;
+        },
+        onError: () => {
+            deletionError.value = 'Unable to delete this student. Please try again.';
+        },
+        onFinish: () => {
+            deletionInProgress.value = false;
+        },
+    });
+};
+
 </script>
 
 
@@ -798,6 +856,10 @@ const editStudent = (
 
         <main class="students-page">
 
+
+            <div v-if="deletionSuccess" class="delete-feedback delete-success" role="status">
+                {{ deletionSuccess }}
+            </div>
 
             <UsersLayout
 
@@ -1014,6 +1076,16 @@ const editStudent = (
 
                         </button>
 
+                        <button
+                            type="button"
+                            class="action-icon-button delete-button"
+                            title="Delete Student Account"
+                            :aria-label="`Delete ${row.full_name}`"
+                            @click.stop="confirmDeleteStudent(row)"
+                        >
+                            <Trash2 :size="20" :stroke-width="2.4" />
+                        </button>
+
                     </div>
 
 
@@ -1038,6 +1110,59 @@ const editStudent = (
 
             </UsersLayout>
 
+            <div
+                v-if="studentPendingDeletion"
+                class="delete-modal-backdrop"
+                role="presentation"
+                @click.self="cancelDeleteStudent"
+                @keydown.esc="cancelDeleteStudent"
+            >
+                <section
+                    ref="deleteDialog"
+                    class="delete-modal"
+                    role="alertdialog"
+                    aria-modal="true"
+                    aria-labelledby="delete-student-title"
+                    aria-describedby="delete-student-description"
+                    tabindex="-1"
+                >
+                    <div class="delete-modal-icon">
+                        <TriangleAlert :size="29" />
+                    </div>
+                    <h2 id="delete-student-title">Delete Student Account?</h2>
+                    <p id="delete-student-description">
+                        Are you sure you want to permanently delete
+                        <strong>{{ studentPendingDeletion.full_name }}</strong>
+                        ({{ studentPendingDeletion.id_number }})?
+                    </p>
+                    <p class="delete-warning">
+                        This cannot be undone. Related attendance, reports,
+                        excuse letters, and ROTC records may also be deleted.
+                    </p>
+                    <p v-if="deletionError" class="delete-feedback delete-error" role="alert">
+                        {{ deletionError }}
+                    </p>
+                    <div class="delete-modal-actions">
+                        <button
+                            type="button"
+                            class="modal-cancel-button"
+                            :disabled="deletionInProgress"
+                            @click="cancelDeleteStudent"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            class="modal-confirm-button"
+                            :disabled="deletionInProgress"
+                            @click="deleteStudent"
+                        >
+                            <Trash2 :size="17" />
+                            {{ deletionInProgress ? 'Deleting...' : 'Delete Permanently' }}
+                        </button>
+                    </div>
+                </section>
+            </div>
 
         </main>
 
@@ -1409,6 +1534,76 @@ const editStudent = (
 
 }
 
+
+/* ========================================================================== 
+   DELETE CONFIRMATION
+   ========================================================================== */
+
+.delete-button { color: #a22525; }
+.delete-button:hover { background: #a22525; border-color: #a22525; }
+.delete-feedback { padding: 12px 16px; margin-bottom: 12px; border-radius: 10px; font-size: 14px; }
+.delete-success { background: #ebf7e7; border: 1px solid #b5dbab; color: #285526; }
+.delete-error { background: #fff0f0; border: 1px solid #f0baba; color: #8d1c1c; }
+.delete-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(12, 20, 24, 0.64);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.delete-modal {
+    width: min(100%, 460px);
+    padding: 30px;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 25px 65px rgba(0, 0, 0, 0.25);
+    color: #233e47;
+    text-align: center;
+}
+.delete-modal-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    background: #fff1ee;
+    color: #b52b2b;
+}
+.delete-modal h2 { font-size: 23px; font-weight: 800; margin: 0 0 12px; }
+.delete-modal p { font-size: 14px; line-height: 1.6; margin: 0 0 14px; }
+.delete-modal strong { overflow-wrap: anywhere; }
+.delete-modal .delete-warning {
+    padding: 12px;
+    border-radius: 10px;
+    background: #fff5e7;
+    color: #854b00;
+    text-align: left;
+}
+.delete-modal .delete-error { text-align: left; }
+.delete-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+.delete-modal-actions button {
+    min-height: 42px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.delete-modal-actions button:disabled { opacity: 0.6; cursor: not-allowed; }
+.modal-cancel-button { background: #eef0ed; color: #233e47; }
+.modal-confirm-button { display: inline-flex; align-items: center; gap: 7px; color: #fff; background: #a22525; }
+.modal-confirm-button:hover:not(:disabled) { background: #811b1b; }
+@media (max-width: 460px) {
+    .delete-modal { padding: 22px; }
+    .delete-modal-actions { flex-direction: column-reverse; }
+    .delete-modal-actions button { justify-content: center; width: 100%; }
+}
 
 /* ==========================================================================
    TABLET

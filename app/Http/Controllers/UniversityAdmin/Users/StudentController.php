@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -143,6 +144,51 @@ class StudentController extends Controller
                     $students,
             ]
         );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Permanently Delete an Enrolled Student
+    |--------------------------------------------------------------------------
+    |
+    | Only the authenticated University Administrator for this university
+    | can delete an approved student. Related attendance, reports, excuse
+    | letters, and ROTC records follow the database's cascade rules.
+    |
+    */
+
+    public function destroy(int $student): RedirectResponse
+    {
+        $studentRecord = $this->approvedStudent($student);
+        $studentName = $studentRecord->full_name;
+
+        DB::transaction(function () use ($studentRecord): void {
+            // Revoke active mobile API access immediately.
+            $studentRecord->tokens()->delete();
+
+            // End any browser sessions associated with this student.
+            DB::table('sessions')
+                ->where('user_id', $studentRecord->id)
+                ->delete();
+
+            // Remove Spatie role/permission references before deleting.
+            $studentRecord->syncRoles([]);
+            $studentRecord->syncPermissions([]);
+
+            // Database cascades remove associated student records.
+            $studentRecord->delete();
+        });
+
+        Log::notice('An enrolled student account was permanently deleted.', [
+            'university_id' => $this->currentUniversityId(),
+            'administrator_id' => Auth::guard('university_admin')->id(),
+            'student_id' => $student,
+        ]);
+
+        return redirect()
+            ->route('university-admin.students.index')
+            ->with('success', $studentName.' was permanently deleted.');
     }
 
 

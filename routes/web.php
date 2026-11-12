@@ -1515,6 +1515,18 @@ Route::prefix(
                         );
 
 
+                    Route::delete(
+                        '/{student}',
+                        'destroy'
+                    )
+                        ->whereNumber(
+                            'student'
+                        )
+                        ->name(
+                            'destroy'
+                        );
+
+
                     Route::get(
                         '/{student}',
                         'show'
