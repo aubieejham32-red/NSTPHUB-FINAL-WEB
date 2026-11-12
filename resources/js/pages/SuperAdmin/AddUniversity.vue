@@ -940,109 +940,112 @@
                     <!-- =================================================
                          STEP 6 — GENERATED
                     ================================================== -->
-                    <section
-                        v-if="currentStepIndex === 5"
-                        class="success-step"
-                    >
-                        <div class="success-icon">
-                            <CheckIcon />
+                    <section v-if="currentStepIndex === 5" class="success-step">
+                        <div class="success-hero">
+                            <span class="success-icon" aria-hidden="true">
+                                <CheckIcon />
+                            </span>
+                            <div class="success-eyebrow">ACCOUNT SETUP COMPLETE</div>
+                            <h2>{{ generatedPayload.alreadyExists ? "University Account Found" : "University Created Successfully" }}</h2>
+                            <p class="success-description">
+                                {{ generatedPayload.alreadyExists
+                                    ? "This university is already registered. Its existing account information is shown below."
+                                    : "Your university is ready to access NSTP HUB. Review the details and download the confidential credentials document." }}
+                            </p>
                         </div>
 
-                        <h2>{{ generatedPayload.alreadyExists ? 'University Already Exists' : 'University Created' }}</h2>
-
-                        <div
-                            v-if="generatedPayload.warning"
-                            class="generated-warning"
-                        >
-                            {{ generatedPayload.warning }}
-                        </div>
-
-                        <div class="credentials-list">
-
-                            <div class="credential-row">
-                                <KeyIcon />
-
-                                <span>Access Code</span>
-
-                                <strong class="access-code">
-                                    {{ generatedPayload.accessCode }}
-                                </strong>
+                        <div class="credentials-panel">
+                            <div class="credentials-panel-header">
+                                <div class="credentials-panel-heading">
+                                    <span class="credentials-panel-icon"><ShieldCheckIcon /></span>
+                                    <div>
+                                        <div class="credentials-overline">UNIVERSITY ADMINISTRATOR</div>
+                                        <h3>Account Details</h3>
+                                    </div>
+                                </div>
+                                <span class="credentials-private-tag"><LockClosedIcon /> Confidential</span>
                             </div>
 
-                            <div class="credential-row">
-                                <LinkIcon />
-
-                                <span>Portal URL</span>
-
-                                <strong>
-                                    {{ generatedPayload.portalUrl }}
-                                </strong>
+                            <div class="credentials-grid">
+                                <div class="credential-field">
+                                    <span class="credential-label"><BuildingLibraryIcon /> University</span>
+                                    <strong>{{ form.name || "—" }}</strong>
+                                </div>
+                                <div class="credential-field">
+                                    <span class="credential-label"><KeyIcon /> Access Code</span>
+                                    <strong class="access-code">{{ generatedPayload.accessCode || "—" }}</strong>
+                                </div>
+                                <div class="credential-field">
+                                    <span class="credential-label"><EnvelopeIcon /> Administrator Email</span>
+                                    <strong>{{ form.adminEmail || "—" }}</strong>
+                                </div>
+                                <div class="credential-field">
+                                    <span class="credential-label"><UserCircleIcon /> Username</span>
+                                    <strong>{{ form.adminUsername || "—" }}</strong>
+                                </div>
+                                <div class="credential-field credential-field-wide">
+                                    <span class="credential-label"><LinkIcon /> Sign-In Portal</span>
+                                    <a
+                                        v-if="generatedPayload.portalUrl"
+                                        :href="generatedPayload.portalUrl"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="credential-link"
+                                    >{{ generatedPayload.portalUrl }}</a>
+                                    <strong v-else>—</strong>
+                                </div>
                             </div>
 
-                            <div class="credential-row">
-                                <UserCircleIcon />
-
-                                <span>Username</span>
-
-                                <strong>
-                                    {{ form.adminUsername }}
-                                </strong>
-                            </div>
-
-                            <div class="credential-row">
-                                <LockClosedIcon />
-
-                                <span>Password</span>
-
-                                <strong>
-                                    {{
-                                        generatedPayload.emailSent
-                                            ? "Sent through email"
-                                            : "Generated — email can be retried below"
-                                    }}
-                                </strong>
+                            <div class="credentials-security-note">
+                                <span class="credentials-note-icon"><LockClosedIcon /></span>
+                                <p>
+                                    <strong>Temporary password is in the PDF.</strong>
+                                    For security, the password is not displayed on this page.
+                                    Give the downloaded document only to the authorized university administrator.
+                                </p>
                             </div>
                         </div>
 
                         <div class="success-actions">
                             <button
                                 type="button"
-                                class="outline-btn"
-                                @click="sendEmailNotification"
-                            >
-                                <EnvelopeIcon />
-                                Send Email
-                            </button>
-
-                            <button
-                                type="button"
-                                class="outline-btn"
+                                class="download-credentials-btn"
                                 @click="downloadPDF"
                             >
                                 <DocumentArrowDownIcon />
-                                Download PDF
+                                Download Credentials PDF
                             </button>
-
+                            <button
+                                type="button"
+                                class="outline-btn"
+                                :disabled="sendingEmail"
+                                @click="sendEmailNotification"
+                            >
+                                <ArrowPathIcon v-if="sendingEmail" class="spin" />
+                                <EnvelopeIcon v-else />
+                                {{ sendingEmail ? "Sending..." : "Send Email" }}
+                            </button>
                             <button
                                 type="button"
                                 class="outline-btn"
                                 :disabled="regeneratingPassword"
                                 @click="resetUniversityAdminPassword"
-                                title="Generate a new password and download a matching PDF"
+                                title="Create a new password and download the updated PDF"
                             >
                                 <KeyIcon />
-                                {{ regeneratingPassword ? 'Regenerating...' : 'Reset Password & PDF' }}
+                                {{ regeneratingPassword ? "Regenerating..." : "Reset Password & PDF" }}
                             </button>
-
-                            <button
-                                type="button"
-                                class="primary-btn"
-                                @click="finishWizard"
-                            >
-                                Done
-                                <ArrowRightIcon />
+                            <button type="button" class="finish-credentials-btn" @click="finishWizard">
+                                Done <ArrowRightIcon />
                             </button>
                         </div>
+
+                        <p v-if="emailNotice" class="email-result" role="status">
+                            {{ emailNotice }}
+                        </p>
+                        <p class="credentials-footer-note">
+                            Keep the PDF in a secure location. Sending an email is optional; creating a university does not depend on email delivery.
+                        </p>
                     </section>
 
                 </form>
@@ -1158,6 +1161,8 @@ const isDragging = ref(false);
 const logoFileInput = ref(null);
 const submitting = ref(false);
 const regeneratingPassword = ref(false);
+const sendingEmail = ref(false);
+const emailNotice = ref("");
 
 /* =========================================================
    STEPS
@@ -1637,9 +1642,10 @@ const submitToDatabase = async () => {
         generatedPayload.alreadyExists =
             Boolean(response.data?.already_exists);
 
-        generatedPayload.warning =
-            response.data?.warning ??
-            "";
+        // Email delivery errors are logged server-side and never interrupt the
+        // university-created screen. A failed email is not treated as sent.
+        generatedPayload.warning = "";
+        emailNotice.value = "";
 
         // The database request completed successfully. Move immediately
         // from Review (index 4) to Generated (index 5), even when the
@@ -1689,43 +1695,30 @@ const submitToDatabase = async () => {
 ========================================================= */
 
 const sendEmailNotification = async () => {
-    if (
-        !generatedPayload.universityId
-    ) {
-        window.alert(
-            "University information is unavailable."
-        );
+    if (!generatedPayload.universityId || sendingEmail.value) return;
 
-        return;
-    }
+    sendingEmail.value = true;
+    emailNotice.value = "";
 
     try {
-        await axios.post(
+        const response = await axios.post(
             `/superadmin/university/email/${generatedPayload.universityId}`
         );
 
+        if (response.data?.success === false) {
+            throw new Error("Email was not sent.");
+        }
+
         generatedPayload.emailSent = true;
-        generatedPayload.warning = "";
-
-        window.alert(
-            "Email sent successfully."
-        );
-    }
-    catch (error) {
-        console.error(error);
-
-        const message =
-            error.response?.data?.message ||
-            "Unable to send email.";
-
-        const backendError =
-            error.response?.data?.error;
-
-        window.alert(
-            backendError
-                ? `${message}\n\n${backendError}`
-                : message
-        );
+        emailNotice.value = "Credentials email sent successfully.";
+    } catch (error) {
+        // Do not show raw SMTP/provider errors or interrupt the successful
+        // creation flow. Never claim delivery when the request fails.
+        console.error("Unable to deliver credentials email:", error);
+        generatedPayload.emailSent = false;
+        emailNotice.value = "Please use Download Credentials PDF to provide account access details securely.";
+    } finally {
+        sendingEmail.value = false;
     }
 };
 
@@ -1751,7 +1744,8 @@ const resetUniversityAdminPassword = async () => {
 
         generatedPayload.pdfUrl = response.data?.pdf_url
             ?? `/superadmin/university/pdf/${id}`;
-        generatedPayload.warning = 'A new temporary password was generated. Download the new PDF; the previous password is now invalid.';
+        generatedPayload.warning = '';
+        emailNotice.value = 'The password was regenerated. The previous password is no longer valid; use the new PDF.';
         generatedPayload.emailSent = false;
 
         // Server generates the PDF on request; it is not stored in public storage.
@@ -3006,157 +3000,166 @@ const downloadPDF = () => {
 }
 
 /* =========================================================
-   SUCCESS
+   SUCCESS — CLEAN CREDENTIALS SCREEN
 ========================================================= */
 
 .success-step {
+    width: 100%;
     min-height: 610px;
-
-    padding:
-        50px
-        40px;
-
+    padding: 48px 42px 38px;
     display: flex;
-
     flex-direction: column;
-
     align-items: center;
-    justify-content: center;
+    background: radial-gradient(circle at 50% 0%, #f4f7ed 0, #ffffff 38%);
+}
+
+.success-hero {
+    width: 100%;
+    max-width: 760px;
+    text-align: center;
+    margin-bottom: 28px;
 }
 
 .success-icon {
-    width: 72px;
-    height: 72px;
-
-    margin-bottom: 18px;
-
-    border-radius: 50%;
-
     display: inline-flex;
-
     align-items: center;
     justify-content: center;
-
-    background: #58761C;
-
-    color: #FFFFFF;
+    width: 66px;
+    height: 66px;
+    margin-bottom: 15px;
+    border-radius: 50%;
+    background: #e7f0d8;
+    border: 1px solid #cfddbb;
+    color: #58761c;
+    box-shadow: 0 8px 24px rgba(88, 118, 28, 0.12);
 }
 
-.success-icon svg {
-    width: 36px;
-    height: 36px;
+.success-icon svg { width: 33px; height: 33px; stroke-width: 2.5; }
+
+.success-eyebrow {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #58761c;
+    margin-bottom: 8px;
 }
 
 .success-step h2 {
-    margin:
-        0
-        0
-        28px;
-
-    color: #54100F;
-
-    font-size: 29px;
-
+    margin: 0 0 10px;
+    color: #54100f;
+    font-size: clamp(25px, 3vw, 32px);
+    line-height: 1.2;
     font-weight: 800;
 }
 
-.generated-warning {
-    width: 100%;
-    max-width: 720px;
-    margin: -10px 0 22px;
-    padding: 12px 14px;
-    border: 1px solid rgba(153, 102, 0, 0.25);
-    border-radius: 10px;
-    background: rgba(245, 183, 0, 0.08);
-    color: #6B4B00;
-    font-size: 13px;
-    line-height: 1.5;
-    font-weight: 650;
+.success-description {
+    max-width: 560px;
+    margin: 0 auto;
+    color: #617078;
+    font-size: 13.5px;
+    line-height: 1.7;
 }
 
-.credentials-list {
+.credentials-panel {
     width: 100%;
-
-    max-width: 720px;
-
-    border-top:
-        1px solid
-        #BEBEBE;
+    max-width: 845px;
+    overflow: hidden;
+    border: 1px solid #e3e6dd;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 15px 42px rgba(32, 49, 39, 0.075);
 }
 
-.credential-row {
-    min-height: 72px;
-
-    padding:
-        14px
-        6px;
-
-    border-bottom:
-        1px solid
-        #BEBEBE;
-
-    display: grid;
-
-    grid-template-columns:
-        28px
-        170px
-        minmax(
-            0,
-            1fr
-        );
-
+.credentials-panel-header {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-
-    gap: 12px;
+    gap: 14px;
+    padding: 22px 25px;
+    background: linear-gradient(100deg, #f7f8f2, #fff);
+    border-bottom: 1px solid #e6e9df;
 }
 
-.credential-row > svg {
-    width: 21px;
-    height: 21px;
+.credentials-panel-heading { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.credentials-panel-icon {
+    width: 46px; height: 46px; flex: 0 0 46px; display: inline-flex;
+    align-items: center; justify-content: center; border-radius: 12px;
+    background: #54100f; color: #fff;
+}
+.credentials-panel-icon svg { width: 23px; height: 23px; }
+.credentials-overline { font-size: 9px; letter-spacing: 1.25px; font-weight: 800; color: #667d45; margin-bottom: 3px; }
+.credentials-panel h3 { font-size: 19px; line-height: 1.2; font-weight: 800; color: #231d1a; margin: 0; }
+.credentials-private-tag {
+    display: inline-flex; align-items: center; gap: 6px; flex: none;
+    padding: 7px 10px; border-radius: 100px; border: 1px solid #ead8c0;
+    color: #795928; background: #fff7e9; font-size: 11px; font-weight: 800;
+}
+.credentials-private-tag svg { width: 14px; height: 14px; }
 
-    color: #58761C;
+.credentials-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 19px 24px;
+    padding: 26px 28px;
 }
 
-.credential-row span {
-    color: #71797B;
-
-    font-size: 12px;
-
-    font-weight: 700;
+.credential-field { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.credential-field-wide { grid-column: 1 / -1; }
+.credential-label {
+    display: inline-flex; align-items: center; gap: 7px;
+    color: #78818a; font-size: 11px; font-weight: 700;
 }
-
-.credential-row strong {
-    overflow-wrap: anywhere;
-
-    color: #233E47;
-
-    font-size: 14px;
-
-    font-weight: 700;
+.credential-label svg { width: 16px; height: 16px; color: #58761c; }
+.credential-field strong {
+    min-width: 0; overflow-wrap: anywhere; font-size: 13.5px;
+    line-height: 1.5; color: #233e47; font-weight: 800;
 }
-
-.access-code {
-    color: #54100F !important;
-
-    font-family:
-        ui-monospace,
-        SFMono-Regular,
-        Menlo,
-        monospace;
-
-    font-size: 18px !important;
+.credential-field .access-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: #54100f; font-size: 17px; letter-spacing: 0.2px;
 }
+.credential-link {
+    width: fit-content; max-width: 100%; overflow-wrap: anywhere;
+    color: #3c611d; font-size: 13px; font-weight: 750; text-decoration: none;
+}
+.credential-link:hover { text-decoration: underline; }
+
+.credentials-security-note {
+    display: flex; align-items: flex-start; gap: 12px;
+    margin: 0 25px 23px; padding: 14px 15px;
+    border-radius: 11px; background: #f7f5ee; border: 1px solid #eee8da;
+}
+.credentials-note-icon { flex: 0 0 19px; color: #876316; }
+.credentials-note-icon svg { display: block; width: 18px; height: 18px; }
+.credentials-security-note p { margin: 0; color: #626a6e; font-size: 11.5px; line-height: 1.65; }
+.credentials-security-note strong { color: #54100f; }
 
 .success-actions {
-    margin-top: 28px;
-
-    display: flex;
-
-    flex-wrap: wrap;
-
-    justify-content: center;
-
-    gap: 10px;
+    width: 100%; max-width: 845px; display: flex; flex-wrap: wrap;
+    align-items: center; justify-content: center; gap: 10px; margin-top: 23px;
+}
+.success-actions button { min-height: 45px; font-size: 12px; padding: 0 15px; white-space: nowrap; }
+.success-actions button:disabled { opacity: .58; cursor: not-allowed; }
+.success-actions svg { width: 17px; height: 17px; }
+.download-credentials-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 45px; padding: 0 18px; border: 1px solid #58761c;
+    border-radius: 11px; background: #58761c; color: #fff;
+    font-family: inherit; font-weight: 800; cursor: pointer;
+    transition: background .18s, transform .18s;
+}
+.download-credentials-btn:hover { background: #476414; transform: translateY(-1px); }
+.finish-credentials-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 0 19px; border: 1px solid #54100f;
+    border-radius: 11px; background: #54100f; color: #fff;
+    font-family: inherit; font-weight: 800; cursor: pointer;
+}
+.finish-credentials-btn:hover { background: #701916; }
+.email-result { margin: 14px 0 0; font-size: 12px; font-weight: 700; color: #58761c; text-align: center; }
+.credentials-footer-note {
+    max-width: 720px; margin: 15px auto 0; color: #88908b; text-align: center;
+    font-size: 11px; line-height: 1.6;
 }
 
 /* =========================================================
@@ -3292,15 +3295,12 @@ select:focus-visible {
         grid-template-columns: 1fr;
     }
 
-    .credential-row {
-        grid-template-columns:
-            26px
-            1fr;
-    }
-
-    .credential-row strong {
-        grid-column: 2;
-    }
+    .credentials-grid { grid-template-columns: 1fr; }
+    .credential-field-wide { grid-column: auto; }
+    .credentials-panel-header { padding: 18px; }
+    .credentials-grid { padding: 20px; }
+    .credentials-security-note { margin: 0 18px 18px; }
+    .credentials-private-tag { font-size: 10px; }
 }
 
 @media (max-width: 520px) {
@@ -3392,9 +3392,13 @@ select:focus-visible {
             18px;
     }
 
-    .success-step h2 {
-        font-size: 24px;
-    }
+    .success-step h2 { font-size: 24px; }
+    .credentials-panel-heading { gap: 9px; }
+    .credentials-panel-icon { width: 38px; height: 38px; flex-basis: 38px; }
+    .credentials-panel h3 { font-size: 17px; }
+    .credentials-overline { font-size: 8px; letter-spacing: .7px; }
+    .credentials-private-tag { padding: 6px; }
+    .credentials-private-tag svg { display: none; }
 
     .success-actions {
         width: 100%;

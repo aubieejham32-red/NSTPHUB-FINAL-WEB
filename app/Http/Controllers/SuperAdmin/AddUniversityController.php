@@ -951,9 +951,6 @@ class AddUniversityController extends Controller
 
             $emailSent = true;
 
-            $emailWarning = null;
-
-
             try {
                 $this->sendInvitationEmail(
                     $administrator,
@@ -964,11 +961,6 @@ class AddUniversityController extends Controller
             ) {
                 $emailSent =
                     false;
-
-                $emailWarning =
-                    'University created successfully, but the credentials email could not be sent. '
-                    . 'Use the Send Email button on the Generated step after checking the mail configuration.';
-
 
                 Log::warning(
                     'University created but credentials email failed.',
@@ -1009,8 +1001,10 @@ class AddUniversityController extends Controller
                     'email_sent' =>
                         $emailSent,
 
+                    // Delivery failures remain in the server logs. The creation
+                    // succeeded, so do not return an unnecessary warning banner.
                     'warning' =>
-                        $emailWarning,
+                        null,
 
                     'message' =>
                         'University created successfully.',
